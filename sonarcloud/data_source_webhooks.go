@@ -44,11 +44,10 @@ func (d dataSourceWebhooksType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Computed:    true,
 						Description: "The url of the webhook.",
 					},
-					"secret": {
-						Type:        types.StringType,
+					"has_secret": {
+						Type:        types.BoolType,
 						Computed:    true,
-						Description: "The secret of the webhook. Used as the key to generate the HMAC hex (lowercase) digest value in the 'X-Sonar-Webhook-HMAC-SHA256' header.",
-						Sensitive:   true,
+						Description: "Whether the webhook has a secret.",
 					},
 				}),
 			},

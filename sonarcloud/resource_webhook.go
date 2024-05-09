@@ -140,7 +140,7 @@ func (r resourceWebhook) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.ID.Value, state.Project.Value); ok {
+	if result, ok := findWebhook(response, state.ID.Value, state.Project.Value, state.Secret.Value); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -200,7 +200,7 @@ func (r resourceWebhook) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.Key.Value, state.Project.Value); ok {
+	if result, ok := findWebhook(response, state.Key.Value, state.Project.Value, plan.Secret.Value); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -247,7 +247,7 @@ func (r resourceWebhook) ImportState(ctx context.Context, req tfsdk.ImportResour
 }
 
 // findWebhook returns the link with the given id, if it exists in the response
-func findWebhook(response *webhooks.ListResponse, key, project_key string) (Webhook, bool) {
+func findWebhook(response *webhooks.ListResponse, key, project_key, secret string) (Webhook, bool) {
 	var result Webhook
 	ok := false
 
