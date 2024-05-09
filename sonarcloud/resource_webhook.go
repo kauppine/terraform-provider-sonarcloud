@@ -3,13 +3,12 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/reinoudk/go-sonarcloud/sonarcloud/webhooks"
+	"strings"
 )
 
 type resourceWebhookType struct{}
@@ -108,6 +107,7 @@ func (r resourceWebhook) Create(ctx context.Context, req tfsdk.CreateResourceReq
 		Key:     types.String{Value: webhook.Key},
 		Project: plan.Project,
 		Name:    types.String{Value: webhook.Name},
+		Secret:  types.String{Value: webhook.Secret},
 		Url:     types.String{Value: webhook.Url},
 	}
 	diags = resp.State.Set(ctx, result)
@@ -266,12 +266,12 @@ func findWebhook(response *webhooks.ListResponse, key, project_key string) (Webh
 	for _, webhook := range response.Webhooks {
 		if webhook.Key == key {
 			result = Webhook{
-				ID:        types.String{Value: webhook.Key},
-				Key:       types.String{Value: webhook.Key},
-				Project:   types.String{Value: project_key, Null: projectKeyIsNull},
-				Name:      types.String{Value: webhook.Name},
-				HasSecret: types.Bool{Value: webhook.HasSecret},
-				Url:       types.String{Value: webhook.Url},
+				ID:      types.String{Value: webhook.Key},
+				Key:     types.String{Value: webhook.Key},
+				Project: types.String{Value: project_key, Null: projectKeyIsNull},
+				Name:    types.String{Value: webhook.Name},
+				Secret:  types.String{Value: webhook.Secret},
+				Url:     types.String{Value: webhook.Url},
 			}
 			ok = true
 			break

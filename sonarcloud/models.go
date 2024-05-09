@@ -159,18 +159,17 @@ type DataWebhooks struct {
 }
 
 type DataWebhook struct {
-	Key       types.String `tfsdk:"key"`
-	Name      types.String `tfsdk:"name"`
-	HasSecret types.Bool   `tfsdk:"hasSecret,omitempty"`
-	Url       types.String `tfsdk:"url"`
+	Key    types.String `tfsdk:"key"`
+	Name   types.String `tfsdk:"name"`
+	Secret types.String `tfsdk:"secret"`
+	Url    types.String `tfsdk:"url"`
 }
 
 type Webhook struct {
-	ID        types.String `tfsdk:"id"`
-	Key       types.String `tfsdk:"key"`
-	Project   types.String `tfsdk:"project"`
-	Name      types.String `tfsdk:"name"`
-	HasSecret types.Bool   `tfsdk:"hasSecret,omitempty"`
-	Secret    types.String `tfsdk:"secret,omitempty"`
-	Url       types.String `tfsdk:"url"`
+	ID      types.String `tfsdk:"id"`
+	Key     types.String `tfsdk:"key"`
+	Project types.String `tfsdk:"project"`
+	Name    types.String `tfsdk:"name"`
+	Secret  types.String `tfsdk:"secret"`
+	Url     types.String `tfsdk:"url"`
 }
