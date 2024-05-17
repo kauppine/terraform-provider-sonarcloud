@@ -166,10 +166,11 @@ type DataWebhook struct {
 }
 
 type Webhook struct {
-	ID      types.String `tfsdk:"id"`
-	Key     types.String `tfsdk:"key"`
-	Project types.String `tfsdk:"project"`
-	Name    types.String `tfsdk:"name"`
-	Secret  types.String `tfsdk:"secret"`
-	Url     types.String `tfsdk:"url"`
+	ID           types.String `tfsdk:"id"`
+	Key          types.String `tfsdk:"key"`
+	Project      types.String `tfsdk:"project"`
+	Organization types.String `tfsdk:"organization"`
+	Name         types.String `tfsdk:"name"`
+	Secret       types.String `tfsdk:"secret"`
+	Url          types.String `tfsdk:"url"`
 }
