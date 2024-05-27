@@ -24,3 +24,6 @@ dist/
 
 # VSCode files
 **/.vscode/**
+
+# Local Development
+**/*.sh

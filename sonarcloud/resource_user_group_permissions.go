@@ -3,17 +3,18 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/permissions"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/permissions"
-	"strings"
-	"sync"
-	"time"
 )
 
 type resourceUserGroupPermissionsType struct{}

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/qualitygates"
 )
 
 type dataSourceQualityGateType struct{}

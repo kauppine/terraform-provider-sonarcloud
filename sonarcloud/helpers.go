@@ -2,21 +2,22 @@ package sonarcloud
 
 import (
 	"fmt"
-	"github.com/cenkalti/backoff/v4"
 	"math/big"
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_tokens"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/project_branches"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/projects"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/qualitygates"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/user_groups"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/user_tokens"
 )
 
 // changedAttrs returns a map where the keys are the names of all the attributes that were changed
