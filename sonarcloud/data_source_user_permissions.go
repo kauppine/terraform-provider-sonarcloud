@@ -3,11 +3,12 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
+
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud"
 )
 
 type dataSourceUserPermissionsType struct{}

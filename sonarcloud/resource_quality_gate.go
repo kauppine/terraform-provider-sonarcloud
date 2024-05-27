@@ -3,12 +3,13 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/reinoudk/go-sonarcloud/sonarcloud/qualitygates"
 )
 
 type resourceQualityGateType struct{}
@@ -444,7 +445,7 @@ func diffName(old, new QualityGate) bool {
 	return true
 }
 
-//Check if a Quality Gate has been set to default
+// Check if a Quality Gate has been set to default
 func diffDefault(old, new QualityGate) bool {
 	if old.IsDefault.Equal(new.IsDefault) {
 		return false

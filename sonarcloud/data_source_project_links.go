@@ -3,10 +3,11 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
+
+	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	pl "github.com/reinoudk/go-sonarcloud/sonarcloud/project_links"
 )
 
 type dataSourceProjectLinksType struct{}
