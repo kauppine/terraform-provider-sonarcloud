@@ -1,6 +1,6 @@
 module terraform-provider-sonarcloud
 
-go 1.18
+go 1.22
 
 require (
 	github.com/ArgonGlow/go-sonarcloud v0.6.0
