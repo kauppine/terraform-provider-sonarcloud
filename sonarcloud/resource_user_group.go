@@ -6,6 +6,8 @@ import (
 	"math/big"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -47,17 +49,17 @@ func (r resourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (r resourceUserGroupType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceUserGroupType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceUserGroup{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceUserGroup struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceUserGroup) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceUserGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -103,7 +105,7 @@ func (r resourceUserGroup) Create(ctx context.Context, req tfsdk.CreateResourceR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceUserGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceUserGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -135,7 +137,7 @@ func (r resourceUserGroup) Read(ctx context.Context, req tfsdk.ReadResourceReque
 	}
 }
 
-func (r resourceUserGroup) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceUserGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -199,7 +201,7 @@ func (r resourceUserGroup) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	}
 }
 
-func (r resourceUserGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceUserGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -224,6 +226,6 @@ func (r resourceUserGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceUserGroup) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+func (r resourceUserGroup) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }

@@ -6,6 +6,8 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_tokens"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -25,7 +27,7 @@ func (r resourceUserTokenType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required:    true,
 				Description: "The login of the user to which the token should be added. This should be the same user as configured in the provider.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"name": {
@@ -33,7 +35,7 @@ func (r resourceUserTokenType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required:    true,
 				Description: "The name of the token.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"token": {
@@ -46,17 +48,17 @@ func (r resourceUserTokenType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (r resourceUserTokenType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceUserTokenType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceUserToken{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceUserToken struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceUserToken) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceUserToken) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -100,7 +102,7 @@ func (r resourceUserToken) Create(ctx context.Context, req tfsdk.CreateResourceR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceUserToken) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceUserToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Token
 	diags := req.State.Get(ctx, &state)
@@ -133,11 +135,11 @@ func (r resourceUserToken) Read(ctx context.Context, req tfsdk.ReadResourceReque
 	}
 }
 
-func (r resourceUserToken) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceUserToken) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// NOOP, we always need to recreate
 }
 
-func (r resourceUserToken) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceUserToken) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state Token
 	diags := req.State.Get(ctx, &state)

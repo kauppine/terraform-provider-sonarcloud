@@ -15,14 +15,14 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_tokens"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 // changedAttrs returns a map where the keys are the names of all the attributes that were changed
 // Note that the name is not the full path, but only the AttributeName of the last path step.
-func changedAttrs(req tfsdk.UpdateResourceRequest, diags diag.Diagnostics) map[string]struct{} {
+func changedAttrs(req resource.UpdateRequest, diags diag.Diagnostics) map[string]struct{} {
 	diffs, err := req.Plan.Raw.Diff(req.State.Raw)
 	if err != nil {
 		diags.AddError(

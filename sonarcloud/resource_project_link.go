@@ -8,6 +8,8 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -28,7 +30,7 @@ func (r resourceProjectLinkType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Required:    true,
 				Description: "The key of the project to add the link to.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"name": {
@@ -36,7 +38,7 @@ func (r resourceProjectLinkType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Required:    true,
 				Description: "The name the link.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"url": {
@@ -44,24 +46,24 @@ func (r resourceProjectLinkType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Required:    true,
 				Description: "The url of the link.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 		},
 	}, nil
 }
 
-func (r resourceProjectLinkType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceProjectLinkType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceProjectLink{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceProjectLink struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceProjectLink) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceProjectLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -107,7 +109,7 @@ func (r resourceProjectLink) Create(ctx context.Context, req tfsdk.CreateResourc
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectLink) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceProjectLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state ProjectLink
 	diags := req.State.Get(ctx, &state)
@@ -139,11 +141,11 @@ func (r resourceProjectLink) Read(ctx context.Context, req tfsdk.ReadResourceReq
 	}
 }
 
-func (r resourceProjectLink) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceProjectLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// NOOP, we always need to recreate
 }
 
-func (r resourceProjectLink) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceProjectLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ProjectLink
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -166,7 +168,7 @@ func (r resourceProjectLink) Delete(ctx context.Context, req tfsdk.DeleteResourc
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceProjectLink) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceProjectLink) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(

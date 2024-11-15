@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/webhooks"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -55,17 +57,17 @@ func (d dataSourceWebhooksType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (d dataSourceWebhooksType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (d dataSourceWebhooksType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceWebhooks{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type dataSourceWebhooks struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (d dataSourceWebhooks) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (d dataSourceWebhooks) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataWebhooks
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

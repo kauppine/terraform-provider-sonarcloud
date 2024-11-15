@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -43,24 +45,24 @@ not be permitted by the SonarCloud web API, or may require admin permissions.
 					stringLengthBetween(1, 400),
 				},
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 		},
 	}, nil
 }
 
-func (r resourceProjectMainBranchType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceProjectMainBranchType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceProjectMainBranch{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceProjectMainBranch struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceProjectMainBranch) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceProjectMainBranch) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -102,7 +104,7 @@ func (r resourceProjectMainBranch) Create(ctx context.Context, req tfsdk.CreateR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectMainBranch) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceProjectMainBranch) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
@@ -134,7 +136,7 @@ func (r resourceProjectMainBranch) Read(ctx context.Context, req tfsdk.ReadResou
 	}
 }
 
-func (r resourceProjectMainBranch) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceProjectMainBranch) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
@@ -190,7 +192,7 @@ func (r resourceProjectMainBranch) Update(ctx context.Context, req tfsdk.UpdateR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectMainBranch) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceProjectMainBranch) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -203,7 +205,7 @@ func (r resourceProjectMainBranch) Delete(ctx context.Context, req tfsdk.DeleteR
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceProjectMainBranch) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceProjectMainBranch) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(
