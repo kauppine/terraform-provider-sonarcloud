@@ -7,6 +7,8 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -27,7 +29,7 @@ func (r resourceQualityGateSelectionType) GetSchema(_ context.Context) (tfsdk.Sc
 				Description: "The ID of the quality gate that is selected for the project(s).",
 				Required:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"project_keys": {
@@ -39,17 +41,17 @@ func (r resourceQualityGateSelectionType) GetSchema(_ context.Context) (tfsdk.Sc
 	}, nil
 }
 
-func (r resourceQualityGateSelectionType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceQualityGateSelectionType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceQualityGateSelection{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceQualityGateSelection struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceQualityGateSelection) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceQualityGateSelection) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -113,7 +115,7 @@ func (r resourceQualityGateSelection) Create(ctx context.Context, req tfsdk.Crea
 	}
 }
 
-func (r resourceQualityGateSelection) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceQualityGateSelection) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -143,7 +145,7 @@ func (r resourceQualityGateSelection) Read(ctx context.Context, req tfsdk.ReadRe
 	}
 }
 
-func (r resourceQualityGateSelection) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceQualityGateSelection) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -216,7 +218,7 @@ func (r resourceQualityGateSelection) Update(ctx context.Context, req tfsdk.Upda
 	}
 }
 
-func (r resourceQualityGateSelection) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceQualityGateSelection) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

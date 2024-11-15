@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -50,17 +52,17 @@ func (d dataSourceProjectsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (d dataSourceProjectsType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (d dataSourceProjectsType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceProjects{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type dataSourceProjects struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (d dataSourceProjects) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (d dataSourceProjects) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var diags diag.Diagnostics
 
 	request := projects.SearchRequest{}

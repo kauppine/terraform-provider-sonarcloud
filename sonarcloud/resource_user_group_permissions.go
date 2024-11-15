@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -38,7 +40,7 @@ func (r resourceUserGroupPermissionsType) GetSchema(_ context.Context) (tfsdk.Sc
 				Required:    true,
 				Description: "The name of the user group to set the permissions for.",
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"description": {
@@ -73,17 +75,17 @@ func (r resourceUserGroupPermissionsType) GetSchema(_ context.Context) (tfsdk.Sc
 	}, nil
 }
 
-func (r resourceUserGroupPermissionsType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceUserGroupPermissionsType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceUserGroupPermissions{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceUserGroupPermissions struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceUserGroupPermissions) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceUserGroupPermissions) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -168,7 +170,7 @@ func (r resourceUserGroupPermissions) Create(ctx context.Context, req tfsdk.Crea
 	}
 }
 
-func (r resourceUserGroupPermissions) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceUserGroupPermissions) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state UserGroupPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -208,7 +210,7 @@ func (r resourceUserGroupPermissions) Read(ctx context.Context, req tfsdk.ReadRe
 	}
 }
 
-func (r resourceUserGroupPermissions) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceUserGroupPermissions) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state UserGroupPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -283,7 +285,7 @@ func (r resourceUserGroupPermissions) Update(ctx context.Context, req tfsdk.Upda
 	}
 }
 
-func (r resourceUserGroupPermissions) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceUserGroupPermissions) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state UserGroupPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -311,7 +313,7 @@ func (r resourceUserGroupPermissions) Delete(ctx context.Context, req tfsdk.Dele
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceUserGroupPermissions) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceUserGroupPermissions) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) < 1 || len(idParts) > 2 || idParts[0] == "" {
 		resp.Diagnostics.AddError(

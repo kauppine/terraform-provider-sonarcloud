@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -28,7 +30,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Description: "Id computed by SonarCloud servers",
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"name": {
@@ -41,7 +43,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Description: "Defines whether the quality gate is built in.",
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"is_default": {
@@ -50,7 +52,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"conditions": {
@@ -62,7 +64,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						Description: "Index/ID of the Condition.",
 						Computed:    true,
 						PlanModifiers: tfsdk.AttributePlanModifiers{
-							tfsdk.UseStateForUnknown(),
+							resource.UseStateForUnknown(),
 						},
 					},
 					"metric": {
@@ -70,7 +72,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						Description: "The metric on which the condition is based.",
 						Required:    true,
 						PlanModifiers: tfsdk.AttributePlanModifiers{
-							tfsdk.UseStateForUnknown(),
+							resource.UseStateForUnknown(),
 						},
 					},
 					"op": {
@@ -81,7 +83,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 							allowedOptions("LT", "GT"),
 						},
 						PlanModifiers: tfsdk.AttributePlanModifiers{
-							tfsdk.UseStateForUnknown(),
+							resource.UseStateForUnknown(),
 						},
 					},
 					"error": {
@@ -89,7 +91,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						Description: "The value on which the condition errors.",
 						Required:    true,
 						PlanModifiers: tfsdk.AttributePlanModifiers{
-							tfsdk.UseStateForUnknown(),
+							resource.UseStateForUnknown(),
 						},
 					},
 				}),
@@ -98,17 +100,17 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (r resourceQualityGateType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceQualityGateType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceQualityGate{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type resourceQualityGate struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (r resourceQualityGate) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceQualityGate) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -210,7 +212,7 @@ func (r resourceQualityGate) Create(ctx context.Context, req tfsdk.CreateResourc
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceQualityGate) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceQualityGate) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	//Retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -247,7 +249,7 @@ func (r resourceQualityGate) Read(ctx context.Context, req tfsdk.ReadResourceReq
 // https://github.com/adnsio/terraform-provider-k0s/blob/c8db5204e70e15484973d5680fe14ed184e719ef/internal/provider/cluster_resource.go#L366
 // https://github.com/devopsarr/terraform-provider-sonarr/blob/078ba51ca03a7782af5fbaaf48f6ebd15284116c/internal/provider/quality_profile_resource.go (DOUBLE NESTED!!! :O)
 // Thanks to those who wrote the above resources, they really helped me (Arnav Bhutani @Bhutania) out :)
-func (r resourceQualityGate) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceQualityGate) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	//retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -391,7 +393,7 @@ func (r resourceQualityGate) Update(ctx context.Context, req tfsdk.UpdateResourc
 	}
 }
 
-func (r resourceQualityGate) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceQualityGate) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -433,8 +435,8 @@ func (r resourceQualityGate) Delete(ctx context.Context, req tfsdk.DeleteResourc
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceQualityGate) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+func (r resourceQualityGate) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
 
 // Check if quality Gate name is the same

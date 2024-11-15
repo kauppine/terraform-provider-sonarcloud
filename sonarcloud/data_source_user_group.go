@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -45,17 +47,17 @@ func (d dataSourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (d dataSourceUserGroupType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (d dataSourceUserGroupType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceUserGroup{
-		p: *(p.(*provider)),
+		p: *(p.(*sonarcloudProvider)),
 	}, nil
 }
 
 type dataSourceUserGroup struct {
-	p provider
+	p sonarcloudProvider
 }
 
-func (d dataSourceUserGroup) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (d dataSourceUserGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values from config
 	var config Group
 	diags := req.Config.Get(ctx, &config)

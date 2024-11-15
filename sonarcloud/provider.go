@@ -6,21 +6,22 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func New() tfsdk.Provider {
-	return &provider{}
+func New() provider.Provider {
+	return &sonarcloudProvider{}
 }
 
-type provider struct {
+type sonarcloudProvider struct {
 	configured   bool
 	client       *sonarcloud.Client
 	organization string
 }
 
-func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *sonarcloudProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"organization": {
@@ -40,7 +41,7 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 	}, nil
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
+func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config providerData
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -83,8 +84,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	p.configured = true
 }
 
-func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
+func (p *sonarcloudProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
+	return map[string]provider.ResourceType{
 		"sonarcloud_user_group":             resourceUserGroupType{},
 		"sonarcloud_user_group_member":      resourceUserGroupMemberType{},
 		"sonarcloud_project":                resourceProjectType{},
@@ -99,8 +100,8 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 	}, nil
 }
 
-func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{
+func (p *sonarcloudProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
+	return map[string]provider.DataSourceType{
 		"sonarcloud_projects":               dataSourceProjectsType{},
 		"sonarcloud_project_links":          dataSourceProjectLinksType{},
 		"sonarcloud_user_group":             dataSourceUserGroupType{},
