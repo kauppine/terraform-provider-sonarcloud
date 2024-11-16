@@ -96,7 +96,7 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 	p.configured = true
 }
 
-func (*sonarcloudProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *sonarcloudProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewUserGroupResource,
 		NewUserGroupMemberResource,
@@ -112,7 +112,7 @@ func (*sonarcloudProvider) Resources(ctx context.Context) []func() resource.Reso
 	}
 }
 
-func (*sonarcloudProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *sonarcloudProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewProjectsDataSource,
 		NewProjectLinksDataSource,

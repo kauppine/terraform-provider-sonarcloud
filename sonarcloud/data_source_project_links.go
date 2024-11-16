@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -73,9 +74,7 @@ func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.C
 	if req.ProviderData == nil {
 		return
 	}
-
-	d.p, resp.Diagnostics = toProvider(req.ProviderData)
-	/*client, ok := req.ProviderData.(*sonarcloud.Client)
+	client, ok := req.ProviderData.(*sonarcloud.Client)
 
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -85,8 +84,7 @@ func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.C
 
 		return
 	}
-
-	d.p.client = client*/
+	d.p.client = client
 }
 
 func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
