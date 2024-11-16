@@ -13,18 +13,20 @@ import (
 )
 
 type ProjectLinksDataSource struct {
-	p sonarcloudProvider
+	p *sonarcloudProvider
 }
+
+var _ datasource.DataSource = (*ProjectLinksDataSource)(nil)
 
 func NewProjectLinksDataSource() datasource.DataSource {
 	return &ProjectLinksDataSource{}
 }
 
-func (*ProjectLinksDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *ProjectLinksDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_project_links"
 }
 
-func (*ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (d *ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This datasource retrieves the list of links for the given project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -73,6 +75,7 @@ func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.C
 		return
 	}
 
+	d.p, resp.Diagnostics = toProvider(req.ProviderData)
 	client, ok := req.ProviderData.(*sonarcloud.Client)
 
 	if !ok {
