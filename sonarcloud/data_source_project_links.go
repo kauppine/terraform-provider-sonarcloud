@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -64,6 +65,26 @@ func (*ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 			},
 		},
 	}, nil
+}
+
+func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*sonarcloud.Client)
+
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.p.client = client
 }
 
 func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
