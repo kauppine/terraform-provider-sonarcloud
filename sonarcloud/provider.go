@@ -28,6 +28,10 @@ type providerData struct {
 	Token        types.String `tfsdk:"token"`
 }
 
+func (p *sonarcloudProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "sonarcloud"
+}
+
 func (p *sonarcloudProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
