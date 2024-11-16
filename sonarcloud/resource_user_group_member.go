@@ -140,6 +140,7 @@ func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequ
 
 	// Check if the resource exists the list of retrieved resources
 	if result, ok := findGroupMember(response, state.Group.ValueString(), state.Login.ValueString()); ok {
+		result.ID = state.Group
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
