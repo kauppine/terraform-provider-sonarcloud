@@ -3,6 +3,7 @@ package sonarcloud
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -34,11 +35,11 @@ func (v stringLengthBetweenValidator) Validate(ctx context.Context, req tfsdk.Va
 		return
 	}
 
-	if str.Unknown || str.Null {
+	if str.IsUnknown() || str.IsNull() {
 		return
 	}
 
-	strLen := len(str.Value)
+	strLen := len(str.ValueString())
 
 	if strLen < v.Min || strLen > v.Max {
 		resp.Diagnostics.AddAttributeError(
@@ -75,13 +76,13 @@ func (v allowedOptionsValidator) Validate(ctx context.Context, req tfsdk.Validat
 		return
 	}
 
-	if str.Unknown || str.Null {
+	if str.IsUnknown() || str.IsNull() {
 		return
 	}
 
 	valid := false
 	for _, option := range v.Options {
-		if option == str.Value {
+		if option == str.ValueString() {
 			valid = true
 			break
 		}
@@ -91,7 +92,7 @@ func (v allowedOptionsValidator) Validate(ctx context.Context, req tfsdk.Validat
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			"Invalid String Value",
-			fmt.Sprintf("String must be one of %v, got: %s.", v.Options, str.Value),
+			fmt.Sprintf("String must be one of %v, got: %s.", v.Options, str.ValueString()),
 		)
 
 		return
@@ -122,7 +123,7 @@ func (v allowedSetOptionsValidator) Validate(ctx context.Context, req tfsdk.Vali
 		return
 	}
 
-	if set.Unknown || set.Null {
+	if set.IsUnknown() || set.IsNull() {
 		return
 	}
 

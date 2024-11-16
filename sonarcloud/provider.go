@@ -61,7 +61,7 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	var organization string
-	if config.Organization.Unknown {
+	if config.Organization.IsUnknown() {
 		resp.Diagnostics.AddWarning(
 			"Unable to create client",
 			"Cannot use unknown value as organization",
@@ -69,24 +69,24 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	if config.Organization.Null {
+	if config.Organization.IsNull() {
 		organization = os.Getenv("SONARCLOUD_ORGANIZATION")
 	} else {
-		organization = config.Organization.Value
+		organization = config.Organization.ValueString()
 	}
 
 	var token string
-	if config.Token.Unknown {
+	if config.Token.IsUnknown() {
 		resp.Diagnostics.AddWarning(
 			"Unable to create client",
 			"Cannot use unknown value as token",
 		)
 	}
 
-	if config.Token.Null {
+	if config.Token.IsNull() {
 		token = os.Getenv("SONARCLOUD_TOKEN")
 	} else {
-		token = config.Token.Value
+		token = config.Token.ValueString()
 	}
 
 	c := sonarcloud.NewClient(organization, token, nil)

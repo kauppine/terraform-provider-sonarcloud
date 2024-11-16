@@ -97,14 +97,14 @@ func (d ProjectsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	allProjects := make([]Project, len(response.Components))
 	for i, component := range response.Components {
 		allProjects[i] = Project{
-			ID:         types.String{Value: component.Name},
-			Name:       types.String{Value: component.Name},
-			Key:        types.String{Value: component.Key},
-			Visibility: types.String{Value: component.Visibility},
+			ID:         types.StringValue(component.Name),
+			Name:       types.StringValue(component.Name),
+			Key:        types.StringValue(component.Key),
+			Visibility: types.StringValue(component.Visibility),
 		}
 	}
 	result.Projects = allProjects
-	result.ID = types.String{Value: d.p.organization}
+	result.ID = types.StringValue(d.p.organization)
 
 	diags = resp.State.Set(ctx, result)
 

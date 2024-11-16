@@ -85,7 +85,7 @@ func (d UserGroupDataSource) Read(ctx context.Context, req datasource.ReadReques
 
 	// Fill in api action struct
 	request := user_groups.SearchRequest{
-		Q: config.Name.Value,
+		Q: config.Name.ValueString(),
 	}
 
 	response, err := d.p.client.UserGroups.SearchAll(request)
@@ -98,7 +98,7 @@ func (d UserGroupDataSource) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findGroup(response, config.Name.Value); ok {
+	if result, ok := findGroup(response, config.Name.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {

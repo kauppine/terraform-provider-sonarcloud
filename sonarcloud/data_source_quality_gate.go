@@ -127,20 +127,20 @@ func (d QualityGateDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	result := QualityGate{}
 	for _, qualityGate := range response.Qualitygates {
-		if qualityGate.Name == config.Name.Value {
+		if qualityGate.Name == config.Name.ValueString() {
 			for _, condition := range qualityGate.Conditions {
 				result.Conditions = append(result.Conditions, Condition{
-					Error:  types.String{Value: condition.Error},
-					ID:     types.Float64{Value: condition.Id},
-					Metric: types.String{Value: condition.Metric},
-					Op:     types.String{Value: condition.Op},
+					Error:  types.StringValue(condition.Error),
+					ID:     types.Float64Value(condition.Id),
+					Metric: types.StringValue(condition.Metric),
+					Op:     types.StringValue(condition.Op),
 				})
 			}
-			result.ID = types.String{Value: fmt.Sprintf("%d", int(qualityGate.Id))}
-			result.GateId = types.Float64{Value: qualityGate.Id}
-			result.Name = types.String{Value: qualityGate.Name}
-			result.IsDefault = types.Bool{Value: qualityGate.IsDefault}
-			result.IsBuiltIn = types.Bool{Value: qualityGate.IsBuiltIn}
+			result.ID = types.StringValue(fmt.Sprintf("%d", int(qualityGate.Id)))
+			result.GateId = types.Float64Value(qualityGate.Id)
+			result.Name = types.StringValue(qualityGate.Name)
+			result.IsDefault = types.BoolValue(qualityGate.IsDefault)
+			result.IsBuiltIn = types.BoolValue(qualityGate.IsBuiltIn)
 
 		}
 	}

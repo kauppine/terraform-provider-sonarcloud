@@ -135,7 +135,7 @@ func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// Fill in api action struct for Quality Gates
 	request := qualitygates.CreateRequest{
-		Name:         plan.Name.Value,
+		Name:         plan.Name.ValueString(),
 		Organization: r.p.organization,
 	}
 
@@ -149,14 +149,14 @@ func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	var result = QualityGate{
-		ID:     types.String{Value: fmt.Sprintf("%d", int(res.Id))},
-		GateId: types.Float64{Value: res.Id},
-		Name:   types.String{Value: res.Name},
+		ID:     types.StringValue(fmt.Sprintf("%d", int(res.Id))),
+		GateId: types.Float64Value(res.Id),
+		Name:   types.StringValue(res.Name),
 	}
 
-	if plan.IsDefault.Value {
+	if plan.IsDefault.ValueBool() {
 		setDefualtRequest := qualitygates.SetAsDefaultRequest{
-			Id:           fmt.Sprintf("%d", int(result.GateId.Value)),
+			Id:           fmt.Sprintf("%d", int(result.GateId.ValueFloat64())),
 			Organization: r.p.organization,
 		}
 		err := r.p.client.Qualitygates.SetAsDefault(setDefualtRequest)
@@ -171,10 +171,10 @@ func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequ
 	conditionRequests := qualitygates.CreateConditionRequest{}
 	for _, conditionPlan := range plan.Conditions {
 		conditionRequests = qualitygates.CreateConditionRequest{
-			Error:        conditionPlan.Error.Value,
-			GateId:       fmt.Sprintf("%d", int(result.GateId.Value)),
-			Metric:       conditionPlan.Metric.Value,
-			Op:           conditionPlan.Op.Value,
+			Error:        conditionPlan.Error.ValueString(),
+			GateId:       fmt.Sprintf("%d", int(result.GateId.ValueFloat64())),
+			Metric:       conditionPlan.Metric.ValueString(),
+			Op:           conditionPlan.Op.ValueString(),
 			Organization: r.p.organization,
 		}
 		res, err := r.p.client.Qualitygates.CreateCondition(conditionRequests)
@@ -187,10 +187,10 @@ func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequ
 		}
 		// didn't implement warning
 		result.Conditions = append(result.Conditions, Condition{
-			Error:  types.String{Value: res.Error},
-			ID:     types.Float64{Value: res.Id},
-			Metric: types.String{Value: res.Metric},
-			Op:     types.String{Value: res.Op},
+			Error:  types.StringValue(res.Error),
+			ID:     types.Float64Value(res.Id),
+			Metric: types.StringValue(res.Metric),
+			Op:     types.StringValue(res.Op),
 		})
 	}
 
@@ -208,7 +208,7 @@ func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	if createdQualityGate, ok := findQualityGate(listRes, result.Name.Value); ok {
+	if createdQualityGate, ok := findQualityGate(listRes, result.Name.ValueString()); ok {
 		result.IsBuiltIn = createdQualityGate.IsBuiltIn
 		result.IsDefault = createdQualityGate.IsDefault
 	}
@@ -241,7 +241,7 @@ func (r QualityGateResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	// Check if the resource exists in the list of retrieved resources
-	if result, ok := findQualityGate(response, state.Name.Value); ok {
+	if result, ok := findQualityGate(response, state.Name.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -273,8 +273,8 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	if diffName(state, plan) {
 		request := qualitygates.RenameRequest{
-			Id:           fmt.Sprintf("%d", int(state.GateId.Value)),
-			Name:         plan.Name.Value,
+			Id:           fmt.Sprintf("%d", int(state.GateId.ValueFloat64())),
+			Name:         plan.Name.ValueString(),
 			Organization: r.p.organization,
 		}
 
@@ -289,9 +289,9 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	if diffDefault(state, plan) {
-		if plan.IsDefault.Equal(types.Bool{Value: true}) {
+		if plan.IsDefault.Equal(types.BoolValue(true)) {
 			request := qualitygates.SetAsDefaultRequest{
-				Id:           fmt.Sprintf("%d", int(state.GateId.Value)),
+				Id:           fmt.Sprintf("%d", int(state.GateId.ValueFloat64())),
 				Organization: r.p.organization,
 			}
 			err := r.p.client.Qualitygates.SetAsDefault(request)
@@ -306,7 +306,7 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 		// Hard coded default present in all repositories (Sonar way)
 		// This assumes that the Sonar way default quality gate will
 		// never change its ID and remain the default forever.
-		if plan.IsDefault.Equal(types.Bool{Value: false}) {
+		if plan.IsDefault.Equal(types.BoolValue(false)) {
 			request := qualitygates.SetAsDefaultRequest{
 				Id:           "9",
 				Organization: r.p.organization,
@@ -326,10 +326,10 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 	if len(toUpdate) > 0 {
 		for _, c := range toUpdate {
 			request := qualitygates.UpdateConditionRequest{
-				Error:        c.Error.Value,
-				Id:           fmt.Sprintf("%d", int(c.ID.Value)),
-				Metric:       c.Metric.Value,
-				Op:           c.Op.Value,
+				Error:        c.Error.ValueString(),
+				Id:           fmt.Sprintf("%d", int(c.ID.ValueFloat64())),
+				Metric:       c.Metric.ValueString(),
+				Op:           c.Op.ValueString(),
 				Organization: r.p.organization,
 			}
 
@@ -346,10 +346,10 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 	if len(toCreate) > 0 {
 		for _, c := range toCreate {
 			request := qualitygates.CreateConditionRequest{
-				GateId:       fmt.Sprintf("%d", int(state.GateId.Value)),
-				Error:        c.Error.Value,
-				Metric:       c.Metric.Value,
-				Op:           c.Op.Value,
+				GateId:       fmt.Sprintf("%d", int(state.GateId.ValueFloat64())),
+				Error:        c.Error.ValueString(),
+				Metric:       c.Metric.ValueString(),
+				Op:           c.Op.ValueString(),
 				Organization: r.p.organization,
 			}
 			_, err := r.p.client.Qualitygates.CreateCondition(request)
@@ -365,7 +365,7 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 	if len(toRemove) > 0 {
 		for _, c := range toRemove {
 			request := qualitygates.DeleteConditionRequest{
-				Id:           fmt.Sprintf("%d", int(c.ID.Value)),
+				Id:           fmt.Sprintf("%d", int(c.ID.ValueFloat64())),
 				Organization: r.p.organization,
 			}
 			err := r.p.client.Qualitygates.DeleteCondition(request)
@@ -392,7 +392,7 @@ func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	if result, ok := findQualityGate(response, plan.Name.Value); ok {
+	if result, ok := findQualityGate(response, plan.Name.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -410,7 +410,7 @@ func (r QualityGateResource) Delete(ctx context.Context, req resource.DeleteRequ
 	// Hard coded default present in all repositories (Sonar way)
 	// This assumes that the Sonar way default quality gate will
 	// never change its ID and remain the default forever.
-	if state.IsDefault.Equal(types.Bool{Value: true}) {
+	if state.IsDefault.Equal(types.BoolValue(true)) {
 		request := qualitygates.SetAsDefaultRequest{
 			Id:           "9",
 			Organization: r.p.organization,
@@ -425,7 +425,7 @@ func (r QualityGateResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 
 	request := qualitygates.DestroyRequest{
-		Id:           fmt.Sprintf("%d", int(state.GateId.Value)),
+		Id:           fmt.Sprintf("%d", int(state.GateId.ValueFloat64())),
 		Organization: r.p.organization,
 	}
 

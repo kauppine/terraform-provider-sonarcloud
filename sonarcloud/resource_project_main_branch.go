@@ -98,8 +98,8 @@ func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	request := project_branches.RenameRequest{
-		Project: plan.ProjectKey.Value,
-		Name:    plan.Name.Value,
+		Project: plan.ProjectKey.ValueString(),
+		Name:    plan.Name.ValueString(),
 	}
 
 	err := r.p.client.ProjectBranches.Rename(request)
@@ -112,9 +112,9 @@ func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	var result = ProjectMainBranch{
-		ID:         types.String{Value: plan.Name.Value},
-		Name:       types.String{Value: plan.Name.Value},
-		ProjectKey: types.String{Value: plan.ProjectKey.Value},
+		ID:         types.StringValue(plan.Name.ValueString()),
+		Name:       types.StringValue(plan.Name.ValueString()),
+		ProjectKey: types.StringValue(plan.ProjectKey.ValueString()),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -132,7 +132,7 @@ func (r ProjectMainBranchResource) Read(ctx context.Context, req resource.ReadRe
 
 	// Fill in api action struct
 	request := project_branches.ListRequest{
-		Project: state.ProjectKey.Value,
+		Project: state.ProjectKey.ValueString(),
 	}
 
 	response, err := r.p.client.ProjectBranches.List(request)
@@ -145,7 +145,7 @@ func (r ProjectMainBranchResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	// Check if the main branch matches the declared main branch
-	if result, ok := findProjectMainBranch(response, state.Name.Value, state.ProjectKey.Value); ok {
+	if result, ok := findProjectMainBranch(response, state.Name.ValueString(), state.ProjectKey.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -182,8 +182,8 @@ func (r ProjectMainBranchResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	request := project_branches.RenameRequest{
-		Project: plan.ProjectKey.Value,
-		Name:    plan.Name.Value,
+		Project: plan.ProjectKey.ValueString(),
+		Name:    plan.Name.ValueString(),
 	}
 
 	err := r.p.client.ProjectBranches.Rename(request)
@@ -200,9 +200,9 @@ func (r ProjectMainBranchResource) Update(ctx context.Context, req resource.Upda
 	// (The rename-response does not have a return value.)
 	// As the API seems to be eventually consistent, this results in flaky behaviour, so we just keep it simple for now.
 	var result = ProjectMainBranch{
-		ID:         types.String{Value: plan.Name.Value},
-		Name:       types.String{Value: plan.Name.Value},
-		ProjectKey: types.String{Value: plan.ProjectKey.Value},
+		ID:         types.StringValue(plan.Name.ValueString()),
+		Name:       types.StringValue(plan.Name.ValueString()),
+		ProjectKey: types.StringValue(plan.ProjectKey.ValueString()),
 	}
 	diags = resp.State.Set(ctx, result)
 

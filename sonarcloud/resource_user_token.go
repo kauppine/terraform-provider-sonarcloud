@@ -95,8 +95,8 @@ func (r UserTokenResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Fill in api action struct
 	request := user_tokens.GenerateRequest{
-		Login: plan.Login.Value,
-		Name:  plan.Name.Value,
+		Login: plan.Login.ValueString(),
+		Name:  plan.Name.ValueString(),
 	}
 
 	res, err := r.p.client.UserTokens.Generate(request)
@@ -109,10 +109,10 @@ func (r UserTokenResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	var result = Token{
-		ID:    types.String{Value: res.Name},
-		Login: types.String{Value: res.Login},
-		Name:  types.String{Value: res.Name},
-		Token: types.String{Value: res.Token},
+		ID:    types.StringValue(res.Name),
+		Login: types.StringValue(res.Login),
+		Name:  types.StringValue(res.Name),
+		Token: types.StringValue(res.Token),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -130,7 +130,7 @@ func (r UserTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Fill in api action struct
 	request := user_tokens.SearchRequest{
-		Login: state.Login.Value,
+		Login: state.Login.ValueString(),
 	}
 
 	response, err := r.p.client.UserTokens.Search(request)
@@ -143,7 +143,7 @@ func (r UserTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if tokenExists(response, state.Name.Value) {
+	if tokenExists(response, state.Name.ValueString()) {
 		// We cannot read the token value, so just write back the original state
 		diags = resp.State.Set(ctx, state)
 		resp.Diagnostics.Append(diags...)
@@ -166,8 +166,8 @@ func (r UserTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	request := user_tokens.RevokeRequest{
-		Login: state.Login.Value,
-		Name:  state.Name.Value,
+		Login: state.Login.ValueString(),
+		Name:  state.Name.ValueString(),
 	}
 
 	err := r.p.client.UserTokens.Revoke(request)

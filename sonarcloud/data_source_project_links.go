@@ -96,7 +96,7 @@ func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	request := pl.SearchRequest{
-		ProjectKey: config.ProjectKey.Value,
+		ProjectKey: config.ProjectKey.ValueString(),
 	}
 
 	response, err := d.p.client.ProjectLinks.Search(request)
@@ -111,15 +111,15 @@ func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRe
 	links := make([]DataProjectLink, len(response.Links))
 	for i, link := range response.Links {
 		links[i] = DataProjectLink{
-			Id:   types.String{Value: link.Id},
-			Name: types.String{Value: link.Name},
-			Type: types.String{Value: link.Type},
-			Url:  types.String{Value: link.Url},
+			Id:   types.StringValue(link.Id),
+			Name: types.StringValue(link.Name),
+			Type: types.StringValue(link.Type),
+			Url:  types.StringValue(link.Url),
 		}
 	}
 
 	result := DataProjectLinks{
-		ID:         types.String{Value: config.ProjectKey.Value},
+		ID:         types.StringValue(config.ProjectKey.ValueString()),
 		ProjectKey: config.ProjectKey,
 		Links:      links,
 	}

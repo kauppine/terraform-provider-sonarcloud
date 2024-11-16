@@ -95,7 +95,7 @@ func (d WebhooksDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	// Fill in api action struct
 	request := webhooks.ListRequest{
 		Organization: d.p.organization,
-		Project:      config.Project.Value,
+		Project:      config.Project.ValueString(),
 	}
 
 	response, err := d.p.client.Webhooks.List(request)
@@ -110,15 +110,15 @@ func (d WebhooksDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	hooks := make([]DataWebhook, len(response.Webhooks))
 	for i, webhook := range response.Webhooks {
 		hooks[i] = DataWebhook{
-			Key:       types.String{Value: webhook.Key},
-			Name:      types.String{Value: webhook.Name},
-			HasSecret: types.Bool{Value: webhook.HasSecret},
-			Url:       types.String{Value: webhook.Url},
+			Key:       types.StringValue(webhook.Key),
+			Name:      types.StringValue(webhook.Name),
+			HasSecret: types.BoolValue(webhook.HasSecret),
+			Url:       types.StringValue(webhook.Url),
 		}
 	}
 
 	result := DataWebhooks{
-		ID:       types.String{Value: fmt.Sprintf("%s-%s", d.p.organization, config.Project.Value)},
+		ID:       types.StringValue(fmt.Sprintf("%s-%s", d.p.organization, config.Project.ValueString())),
 		Project:  config.Project,
 		Webhooks: hooks,
 	}

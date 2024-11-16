@@ -138,23 +138,23 @@ func (d QualityGatesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		var allConditions []Condition
 		for _, condition := range qualityGate.Conditions {
 			allConditions = append(allConditions, Condition{
-				Error:  types.String{Value: condition.Error},
-				ID:     types.Float64{Value: condition.Id},
-				Metric: types.String{Value: condition.Metric},
-				Op:     types.String{Value: condition.Op},
+				Error:  types.StringValue(condition.Error),
+				ID:     types.Float64Value(condition.Id),
+				Metric: types.StringValue(condition.Metric),
+				Op:     types.StringValue(condition.Op),
 			})
 		}
 		allQualityGates = append(allQualityGates, QualityGate{
-			ID:         types.String{Value: fmt.Sprintf("%d", int(qualityGate.Id))},
-			GateId:     types.Float64{Value: qualityGate.Id},
-			IsBuiltIn:  types.Bool{Value: qualityGate.IsBuiltIn},
-			IsDefault:  types.Bool{Value: qualityGate.IsDefault},
-			Name:       types.String{Value: qualityGate.Name},
+			ID:         types.StringValue(fmt.Sprintf("%d", int(qualityGate.Id))),
+			GateId:     types.Float64Value(qualityGate.Id),
+			IsBuiltIn:  types.BoolValue(qualityGate.IsBuiltIn),
+			IsDefault:  types.BoolValue(qualityGate.IsDefault),
+			Name:       types.StringValue(qualityGate.Name),
 			Conditions: allConditions,
 		})
 	}
 	result.QualityGates = allQualityGates
-	result.ID = types.String{Value: d.p.organization}
+	result.ID = types.StringValue(d.p.organization)
 
 	diags = resp.State.Set(ctx, result)
 

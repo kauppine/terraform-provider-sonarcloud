@@ -127,17 +127,17 @@ func (r UserPermissionsResource) Create(ctx context.Context, req resource.Create
 
 	// Add permissions one by one
 	wg := sync.WaitGroup{}
-	for _, elem := range plan.Permissions.Elems {
-		permission := elem.(types.String).Value
+	for _, elem := range plan.Permissions.Elements() {
+		permission := elem.(types.String).ValueString()
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
 			request := permissions.AddUserRequest{
-				Login:        plan.Login.Value,
+				Login:        plan.Login.ValueString(),
 				Permission:   permission,
-				ProjectKey:   plan.ProjectKey.Value,
+				ProjectKey:   plan.ProjectKey.ValueString(),
 				Organization: r.p.organization,
 			}
 			if err := r.p.client.Permissions.AddUser(request); err != nil {
@@ -166,7 +166,7 @@ func (r UserPermissionsResource) Create(ctx context.Context, req resource.Create
 		)
 	}
 
-	plannedPermissions := make([]string, len(plan.Permissions.Elems))
+	plannedPermissions := make([]string, len(plan.Permissions.Elements()))
 	diags = plan.Permissions.ElementsAs(ctx, &plannedPermissions, true)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -177,7 +177,7 @@ func (r UserPermissionsResource) Create(ctx context.Context, req resource.Create
 
 	user, err := backoff.RetryWithData(
 		func() (*UserPermissions, error) {
-			user, err := findUserWithPermissionsSet(r.p.client, plan.Login.Value, plan.ProjectKey.Value, plan.Permissions)
+			user, err := findUserWithPermissionsSet(r.p.client, plan.Login.ValueString(), plan.ProjectKey.ValueString(), plan.Permissions)
 			return user, err
 		}, backoffConfig)
 
@@ -201,7 +201,7 @@ func (r UserPermissionsResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Query for permissions
-	searchRequest := UserPermissionsSearchRequest{ProjectKey: state.ProjectKey.Value}
+	searchRequest := UserPermissionsSearchRequest{ProjectKey: state.ProjectKey.ValueString()}
 	users, err := sonarcloud.GetAll[UserPermissionsSearchRequest, UserPermissionsSearchResponseUser](r.p.client, "/permissions/users", searchRequest, "users")
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -211,20 +211,20 @@ func (r UserPermissionsResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	if user, ok := findUser(users, state.Login.Value); ok {
+	if user, ok := findUser(users, state.Login.ValueString()); ok {
 		permissionsElems := make([]attr.Value, len(user.Permissions))
 
 		for i, permission := range user.Permissions {
-			permissionsElems[i] = types.String{Value: permission}
+			permissionsElems[i] = types.StringValue(permission)
 		}
 
 		result := UserPermissions{
-			ID:          types.String{Value: state.ProjectKey.Value + "-" + state.Login.Value},
+			ID:          types.StringValue(state.ProjectKey.ValueString() + "-" + state.Login.ValueString()),
 			ProjectKey:  state.ProjectKey,
-			Login:       types.String{Value: user.Login},
-			Name:        types.String{Value: user.Name},
-			Permissions: types.Set{Elems: permissionsElems, ElemType: types.StringType},
-			Avatar:      types.String{Value: user.Avatar},
+			Login:       types.StringValue(user.Login),
+			Name:        types.StringValue(user.Name),
+			Permissions: types.SetValueMust(types.StringType, permissionsElems),
+			Avatar:      types.StringValue(user.Avatar),
 		}
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
@@ -252,10 +252,10 @@ func (r UserPermissionsResource) Update(ctx context.Context, req resource.Update
 
 	for _, remove := range toRemove {
 		removeRequest := permissions.RemoveUserRequest{
-			Login:        state.Login.Value,
+			Login:        state.Login.ValueString(),
 			Organization: r.p.organization,
-			Permission:   remove.(types.String).Value,
-			ProjectKey:   state.ProjectKey.Value,
+			Permission:   remove.(types.String).ValueString(),
+			ProjectKey:   state.ProjectKey.ValueString(),
 		}
 		err := r.p.client.Permissions.RemoveUser(removeRequest)
 		if err != nil {
@@ -268,9 +268,9 @@ func (r UserPermissionsResource) Update(ctx context.Context, req resource.Update
 	}
 	for _, add := range toAdd {
 		addRequest := permissions.AddUserRequest{
-			Login:        plan.Login.Value,
-			Permission:   add.(types.String).Value,
-			ProjectKey:   plan.ProjectKey.Value,
+			Login:        plan.Login.ValueString(),
+			Permission:   add.(types.String).ValueString(),
+			ProjectKey:   plan.ProjectKey.ValueString(),
 			Organization: r.p.organization,
 		}
 		if err := r.p.client.Permissions.AddUser(addRequest); err != nil {
@@ -282,7 +282,7 @@ func (r UserPermissionsResource) Update(ctx context.Context, req resource.Update
 		}
 	}
 
-	plannedPermissions := make([]string, len(plan.Permissions.Elems))
+	plannedPermissions := make([]string, len(plan.Permissions.Elements()))
 	diags = plan.Permissions.ElementsAs(ctx, &plannedPermissions, true)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -293,7 +293,7 @@ func (r UserPermissionsResource) Update(ctx context.Context, req resource.Update
 
 	user, err := backoff.RetryWithData(
 		func() (*UserPermissions, error) {
-			return findUserWithPermissionsSet(r.p.client, plan.Login.Value, plan.ProjectKey.Value, plan.Permissions)
+			return findUserWithPermissionsSet(r.p.client, plan.Login.ValueString(), plan.ProjectKey.ValueString(), plan.Permissions)
 		}, backoffConfig)
 
 	if err != nil {
@@ -315,12 +315,12 @@ func (r UserPermissionsResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	for _, remove := range state.Permissions.Elems {
+	for _, remove := range state.Permissions.Elements() {
 		removeRequest := permissions.RemoveUserRequest{
-			Login:        state.Login.Value,
+			Login:        state.Login.ValueString(),
 			Organization: r.p.organization,
-			Permission:   remove.(types.String).Value,
-			ProjectKey:   state.ProjectKey.Value,
+			Permission:   remove.(types.String).ValueString(),
+			ProjectKey:   state.ProjectKey.ValueString(),
 		}
 		err := r.p.client.Permissions.RemoveUser(removeRequest)
 		if err != nil {
@@ -378,10 +378,10 @@ func findUserWithPermissionsSet(client *sonarcloud.Client, login, projectKey str
 
 	permissionsElems := make([]attr.Value, len(user.Permissions))
 	for i, permission := range user.Permissions {
-		permissionsElems[i] = types.String{Value: permission}
+		permissionsElems[i] = types.StringValue(permission)
 	}
 
-	foundPermissions := types.Set{Elems: permissionsElems, ElemType: types.StringType}
+	foundPermissions, _ := types.SetValue(types.StringType, permissionsElems)
 
 	if !foundPermissions.Equal(expectedPermissions) {
 		return nil, fmt.Errorf("the returned permissions do not match the expected permissions (login='%s',projectKey='%s, expected='%v', got='%v')",
@@ -392,12 +392,12 @@ func findUserWithPermissionsSet(client *sonarcloud.Client, login, projectKey str
 	}
 
 	return &UserPermissions{
-		ID:          types.String{Value: projectKey + "-" + login},
-		ProjectKey:  types.String{Value: projectKey},
-		Login:       types.String{Value: user.Login},
-		Name:        types.String{Value: user.Name},
+		ID:          types.StringValue(projectKey + "-" + login),
+		ProjectKey:  types.StringValue(projectKey),
+		Login:       types.StringValue(user.Login),
+		Name:        types.StringValue(user.Name),
 		Permissions: foundPermissions,
-		Avatar:      types.String{Value: user.Avatar},
+		Avatar:      types.StringValue(user.Avatar),
 	}, nil
 
 }

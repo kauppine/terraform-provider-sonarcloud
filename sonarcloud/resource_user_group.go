@@ -96,8 +96,8 @@ func (r UserGroupResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Fill in api action struct
 	request := user_groups.CreateRequest{
-		Name:         plan.Name.Value,
-		Description:  plan.Description.Value,
+		Name:         plan.Name.ValueString(),
+		Description:  plan.Description.ValueString(),
 		Organization: r.p.organization,
 	}
 
@@ -111,11 +111,11 @@ func (r UserGroupResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	var result = Group{
-		Default:      types.Bool{Value: res.Group.Default},
-		Description:  types.String{Value: res.Group.Description},
-		ID:           types.String{Value: big.NewFloat(res.Group.Id).String()},
-		MembersCount: types.Number{Value: big.NewFloat(res.Group.MembersCount)},
-		Name:         types.String{Value: res.Group.Name},
+		Default:      types.BoolValue(res.Group.Default),
+		Description:  types.StringValue(res.Group.Description),
+		ID:           types.StringValue(big.NewFloat(res.Group.Id).String()),
+		MembersCount: types.NumberValue(big.NewFloat(res.Group.MembersCount)),
+		Name:         types.StringValue(res.Group.Name),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -133,7 +133,7 @@ func (r UserGroupResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Fill in api action struct
 	request := user_groups.SearchRequest{
-		Q: state.Name.Value,
+		Q: state.Name.ValueString(),
 	}
 
 	response, err := r.p.client.UserGroups.SearchAll(request)
@@ -146,7 +146,7 @@ func (r UserGroupResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findGroup(response, state.Name.Value); ok {
+	if result, ok := findGroup(response, state.Name.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -179,14 +179,14 @@ func (r UserGroupResource) Update(ctx context.Context, req resource.UpdateReques
 	// Fill in api action struct
 	// Note: we skip values that have not been changed
 	request := user_groups.UpdateRequest{
-		Id: state.ID.Value,
+		Id: state.ID.ValueString(),
 	}
 
 	if _, ok := changed["name"]; ok {
-		request.Name = plan.Name.Value
+		request.Name = plan.Name.ValueString()
 	}
 	if _, ok := changed["description"]; ok {
-		request.Description = plan.Description.Value
+		request.Description = plan.Description.ValueString()
 	}
 
 	err := r.p.client.UserGroups.Update(request)
@@ -212,7 +212,7 @@ func (r UserGroupResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findGroup(response, plan.Name.Value); ok {
+	if result, ok := findGroup(response, plan.Name.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -228,7 +228,7 @@ func (r UserGroupResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	request := user_groups.DeleteRequest{
-		Id: state.ID.Value,
+		Id: state.ID.ValueString(),
 	}
 
 	err := r.p.client.UserGroups.Delete(request)

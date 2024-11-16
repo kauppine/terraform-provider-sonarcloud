@@ -92,8 +92,8 @@ func (r UserGroupMemberResource) Create(ctx context.Context, req resource.Create
 
 	// Fill in api action struct
 	request := user_groups.AddUserRequest{
-		Login:        plan.Login.Value,
-		Name:         plan.Group.Value,
+		Login:        plan.Login.ValueString(),
+		Name:         plan.Group.ValueString(),
 		Organization: r.p.organization,
 	}
 
@@ -108,7 +108,7 @@ func (r UserGroupMemberResource) Create(ctx context.Context, req resource.Create
 
 	// We have no response, assume the values were set when no error has been returned and just set ID
 	state := plan
-	state.ID = types.String{Value: fmt.Sprintf("%s%s", plan.Group.Value, plan.Login.Value)}
+	state.ID = types.StringValue(fmt.Sprintf("%s%s", plan.Group.ValueString(), plan.Login.ValueString()))
 	diags = resp.State.Set(ctx, state)
 
 	resp.Diagnostics.Append(diags...)
@@ -125,8 +125,8 @@ func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequ
 
 	// Fill in api action struct
 	request := user_groups.UsersRequest{
-		Q:    state.Login.Value,
-		Name: state.Group.Value,
+		Q:    state.Login.ValueString(),
+		Name: state.Group.ValueString(),
 	}
 
 	response, err := r.p.client.UserGroups.UsersAll(request)
@@ -139,7 +139,7 @@ func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findGroupMember(response, state.Group.Value, state.Login.Value); ok {
+	if result, ok := findGroupMember(response, state.Group.ValueString(), state.Login.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -162,8 +162,8 @@ func (r UserGroupMemberResource) Delete(ctx context.Context, req resource.Delete
 
 	// Fill in api action struct
 	request := user_groups.RemoveUserRequest{
-		Login:        state.Login.Value,
-		Name:         state.Group.Value,
+		Login:        state.Login.ValueString(),
+		Name:         state.Group.ValueString(),
 		Organization: r.p.organization,
 	}
 

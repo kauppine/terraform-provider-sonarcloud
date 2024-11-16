@@ -99,7 +99,7 @@ func (d UserPermissionsDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	// Query for permissions
-	searchRequest := UserPermissionsSearchRequest{ProjectKey: config.ProjectKey.Value}
+	searchRequest := UserPermissionsSearchRequest{ProjectKey: config.ProjectKey.ValueString()}
 	users, err := sonarcloud.GetAll[UserPermissionsSearchRequest, UserPermissionsSearchResponseUser](d.p.client, "/permissions/users", searchRequest, "users")
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -114,18 +114,18 @@ func (d UserPermissionsDataSource) Read(ctx context.Context, req datasource.Read
 	for _, user := range users {
 		permissionsElems := make([]attr.Value, len(user.Permissions))
 		for i, permission := range user.Permissions {
-			permissionsElems[i] = types.String{Value: permission}
+			permissionsElems[i] = types.StringValue(permission)
 		}
 
 		allUsers = append(allUsers, DataUserPermissionsUser{
-			Login:       types.String{Value: user.Login},
-			Name:        types.String{Value: user.Name},
-			Permissions: types.Set{Elems: permissionsElems, ElemType: types.StringType},
-			Avatar:      types.String{Value: user.Avatar},
+			Login:       types.StringValue(user.Login),
+			Name:        types.StringValue(user.Name),
+			Permissions: types.SetValueMust(types.StringType, permissionsElems),
+			Avatar:      types.StringValue(user.Avatar),
 		})
 	}
 	result.Users = allUsers
-	result.ID = types.String{Value: d.p.organization}
+	result.ID = types.StringValue(d.p.organization)
 	result.ProjectKey = config.ProjectKey
 
 	diags = resp.State.Set(ctx, result)

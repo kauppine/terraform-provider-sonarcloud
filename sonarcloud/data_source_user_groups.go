@@ -103,15 +103,15 @@ func (d UserGroupsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	allGroups := make([]Group, len(res.Groups))
 	for i, group := range res.Groups {
 		allGroups[i] = Group{
-			ID:           types.String{Value: big.NewFloat(group.Id).String()},
-			Default:      types.Bool{Value: group.Default},
-			Description:  types.String{Value: group.Description},
-			MembersCount: types.Number{Value: big.NewFloat(group.MembersCount)},
-			Name:         types.String{Value: group.Name},
+			ID:           types.StringValue(big.NewFloat(group.Id).String()),
+			Default:      types.BoolValue(group.Default),
+			Description:  types.StringValue(group.Description),
+			MembersCount: types.NumberValue(big.NewFloat(group.MembersCount)),
+			Name:         types.StringValue(group.Name),
 		}
 	}
 	result.Groups = allGroups
-	result.ID = types.String{Value: d.p.organization}
+	result.ID = types.StringValue(d.p.organization)
 
 	diags = resp.State.Set(ctx, result)
 

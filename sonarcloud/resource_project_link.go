@@ -100,9 +100,9 @@ func (r ProjectLinkResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// Fill in api action struct
 	request := project_links.CreateRequest{
-		Name:       plan.Name.Value,
-		ProjectKey: plan.ProjectKey.Value,
-		Url:        plan.Url.Value,
+		Name:       plan.Name.ValueString(),
+		ProjectKey: plan.ProjectKey.ValueString(),
+		Url:        plan.Url.ValueString(),
 	}
 
 	res, err := r.p.client.ProjectLinks.Create(request)
@@ -116,10 +116,10 @@ func (r ProjectLinkResource) Create(ctx context.Context, req resource.CreateRequ
 
 	link := res.Link
 	var result = ProjectLink{
-		ID:         types.String{Value: link.Id},
+		ID:         types.StringValue(link.Id),
 		ProjectKey: plan.ProjectKey,
-		Name:       types.String{Value: link.Name},
-		Url:        types.String{Value: link.Url},
+		Name:       types.StringValue(link.Name),
+		Url:        types.StringValue(link.Url),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -137,7 +137,7 @@ func (r ProjectLinkResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// Fill in api action struct
 	request := project_links.SearchRequest{
-		ProjectKey: state.ProjectKey.Value,
+		ProjectKey: state.ProjectKey.ValueString(),
 	}
 
 	response, err := r.p.client.ProjectLinks.Search(request)
@@ -150,7 +150,7 @@ func (r ProjectLinkResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findProjectLink(response, state.ID.Value, state.ProjectKey.Value); ok {
+	if result, ok := findProjectLink(response, state.ID.ValueString(), state.ProjectKey.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -171,7 +171,7 @@ func (r ProjectLinkResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 
 	request := project_links.DeleteRequest{
-		Id: state.ID.Value,
+		Id: state.ID.ValueString(),
 	}
 	err := r.p.client.ProjectLinks.Delete(request)
 	if err != nil {
@@ -206,10 +206,10 @@ func findProjectLink(response *project_links.SearchResponse, id, project_key str
 	for _, link := range response.Links {
 		if link.Id == id {
 			result = ProjectLink{
-				ID:         types.String{Value: link.Id},
-				ProjectKey: types.String{Value: project_key},
-				Name:       types.String{Value: link.Name},
-				Url:        types.String{Value: link.Url},
+				ID:         types.StringValue(link.Id),
+				ProjectKey: types.StringValue(project_key),
+				Name:       types.StringValue(link.Name),
+				Url:        types.StringValue(link.Url),
 			}
 			ok = true
 			break

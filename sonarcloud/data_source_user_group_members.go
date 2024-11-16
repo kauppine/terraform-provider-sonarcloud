@@ -84,7 +84,7 @@ func (d UserGroupMembersDataSource) Read(ctx context.Context, req datasource.Rea
 
 	// An empty search request retrieves all members
 	request := user_groups.UsersRequest{
-		Name: config.Group.Value,
+		Name: config.Group.ValueString(),
 	}
 
 	res, err := d.p.client.UserGroups.UsersAll(request)
@@ -100,8 +100,8 @@ func (d UserGroupMembersDataSource) Read(ctx context.Context, req datasource.Rea
 	allUsers := make([]User, len(res.Users))
 	for i, user := range res.Users {
 		allUsers[i] = User{
-			Login: types.String{Value: user.Login},
-			Name:  types.String{Value: user.Name},
+			Login: types.StringValue(user.Login),
+			Name:  types.StringValue(user.Name),
 		}
 	}
 	result.Users = allUsers

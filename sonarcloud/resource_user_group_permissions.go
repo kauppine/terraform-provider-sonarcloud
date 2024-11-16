@@ -122,17 +122,17 @@ func (r UserGroupPermissionsResource) Create(ctx context.Context, req resource.C
 
 	// Add permissions one by one
 	wg := sync.WaitGroup{}
-	for _, elem := range plan.Permissions.Elems {
-		permission := elem.(types.String).Value
+	for _, elem := range plan.Permissions.Elements() {
+		permission := elem.(types.String).ValueString()
 
 		go func() {
 			wg.Add(1)
 			defer wg.Done()
 
 			request := permissions.AddGroupRequest{
-				GroupName:    plan.Name.Value,
+				GroupName:    plan.Name.ValueString(),
 				Permission:   permission,
-				ProjectKey:   plan.ProjectKey.Value,
+				ProjectKey:   plan.ProjectKey.ValueString(),
 				Organization: r.p.organization,
 			}
 			if err := r.p.client.Permissions.AddGroup(request); err != nil {
@@ -161,7 +161,7 @@ func (r UserGroupPermissionsResource) Create(ctx context.Context, req resource.C
 		)
 	}
 
-	plannedPermissions := make([]string, len(plan.Permissions.Elems))
+	plannedPermissions := make([]string, len(plan.Permissions.Elements()))
 	diags = plan.Permissions.ElementsAs(ctx, &plannedPermissions, true)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -172,7 +172,7 @@ func (r UserGroupPermissionsResource) Create(ctx context.Context, req resource.C
 
 	group, err := backoff.RetryWithData(
 		func() (*UserGroupPermissions, error) {
-			group, err := findUserGroupWithPermissionsSet(r.p.client, plan.Name.Value, plan.ProjectKey.Value, plan.Permissions)
+			group, err := findUserGroupWithPermissionsSet(r.p.client, plan.Name.ValueString(), plan.ProjectKey.ValueString(), plan.Permissions)
 			return group, err
 		}, backoffConfig)
 
@@ -196,7 +196,7 @@ func (r UserGroupPermissionsResource) Read(ctx context.Context, req resource.Rea
 	}
 
 	// Query for permissions
-	searchRequest := UserGroupPermissionsSearchRequest{ProjectKey: state.ProjectKey.Value}
+	searchRequest := UserGroupPermissionsSearchRequest{ProjectKey: state.ProjectKey.ValueString()}
 	groups, err := sonarcloud.GetAll[UserGroupPermissionsSearchRequest, UserGroupPermissionsSearchResponseGroup](r.p.client, "/permissions/groups", searchRequest, "groups")
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -206,19 +206,19 @@ func (r UserGroupPermissionsResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	if group, ok := findUserGroup(groups, state.Name.Value); ok {
+	if group, ok := findUserGroup(groups, state.Name.ValueString()); ok {
 		permissionsElems := make([]attr.Value, len(group.Permissions))
 
 		for i, permission := range group.Permissions {
-			permissionsElems[i] = types.String{Value: permission}
+			permissionsElems[i] = types.StringValue(permission)
 		}
 
 		result := UserGroupPermissions{
-			ID:          types.String{Value: group.Id},
+			ID:          types.StringValue(group.Id),
 			ProjectKey:  state.ProjectKey,
-			Name:        types.String{Value: group.Name},
-			Description: types.String{Value: group.Description},
-			Permissions: types.Set{Elems: permissionsElems, ElemType: types.StringType},
+			Name:        types.StringValue(group.Name),
+			Description: types.StringValue(group.Description),
+			Permissions: types.SetValueMust(types.StringType, permissionsElems),
 		}
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
@@ -246,9 +246,9 @@ func (r UserGroupPermissionsResource) Update(ctx context.Context, req resource.U
 
 	for _, remove := range toRemove {
 		removeRequest := permissions.RemoveGroupRequest{
-			GroupName:    state.Name.Value,
-			Permission:   remove.(types.String).Value,
-			ProjectKey:   state.ProjectKey.Value,
+			GroupName:    state.Name.ValueString(),
+			Permission:   remove.(types.String).ValueString(),
+			ProjectKey:   state.ProjectKey.ValueString(),
 			Organization: r.p.organization,
 		}
 		err := r.p.client.Permissions.RemoveGroup(removeRequest)
@@ -262,9 +262,9 @@ func (r UserGroupPermissionsResource) Update(ctx context.Context, req resource.U
 	}
 	for _, add := range toAdd {
 		addRequest := permissions.AddGroupRequest{
-			GroupName:    plan.Name.Value,
-			Permission:   add.(types.String).Value,
-			ProjectKey:   plan.ProjectKey.Value,
+			GroupName:    plan.Name.ValueString(),
+			Permission:   add.(types.String).ValueString(),
+			ProjectKey:   plan.ProjectKey.ValueString(),
 			Organization: r.p.organization,
 		}
 		if err := r.p.client.Permissions.AddGroup(addRequest); err != nil {
@@ -276,7 +276,7 @@ func (r UserGroupPermissionsResource) Update(ctx context.Context, req resource.U
 		}
 	}
 
-	plannedPermissions := make([]string, len(plan.Permissions.Elems))
+	plannedPermissions := make([]string, len(plan.Permissions.Elements()))
 	diags = plan.Permissions.ElementsAs(ctx, &plannedPermissions, true)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -287,7 +287,7 @@ func (r UserGroupPermissionsResource) Update(ctx context.Context, req resource.U
 
 	group, err := backoff.RetryWithData(
 		func() (*UserGroupPermissions, error) {
-			group, err := findUserGroupWithPermissionsSet(r.p.client, plan.Name.Value, plan.ProjectKey.Value, plan.Permissions)
+			group, err := findUserGroupWithPermissionsSet(r.p.client, plan.Name.ValueString(), plan.ProjectKey.ValueString(), plan.Permissions)
 			return group, err
 		}, backoffConfig)
 
@@ -310,11 +310,11 @@ func (r UserGroupPermissionsResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	for _, remove := range state.Permissions.Elems {
+	for _, remove := range state.Permissions.Elements() {
 		removeRequest := permissions.RemoveGroupRequest{
-			GroupName:    state.Name.Value,
-			Permission:   remove.(types.String).Value,
-			ProjectKey:   state.ProjectKey.Value,
+			GroupName:    state.Name.ValueString(),
+			Permission:   remove.(types.String).ValueString(),
+			ProjectKey:   state.ProjectKey.ValueString(),
 			Organization: r.p.organization,
 		}
 		err := r.p.client.Permissions.RemoveGroup(removeRequest)
@@ -372,10 +372,10 @@ func findUserGroupWithPermissionsSet(client *sonarcloud.Client, name, projectKey
 
 	permissionsElems := make([]attr.Value, len(group.Permissions))
 	for i, permission := range group.Permissions {
-		permissionsElems[i] = types.String{Value: permission}
+		permissionsElems[i] = types.StringValue(permission)
 	}
 
-	foundPermissions := types.Set{Elems: permissionsElems, ElemType: types.StringType}
+	foundPermissions := types.SetValueMust(types.StringType, permissionsElems)
 
 	if !foundPermissions.Equal(expectedPermissions) {
 		return nil, fmt.Errorf("the returned permissions do not match the expected permissions (name='%s',projectKey='%s, expected='%v', got='%v')",
@@ -386,10 +386,10 @@ func findUserGroupWithPermissionsSet(client *sonarcloud.Client, name, projectKey
 	}
 
 	return &UserGroupPermissions{
-		ID:          types.String{Value: projectKey + "-" + name},
-		ProjectKey:  types.String{Value: projectKey},
-		Name:        types.String{Value: group.Name},
-		Description: types.String{Value: group.Description},
+		ID:          types.StringValue(projectKey + "-" + name),
+		ProjectKey:  types.StringValue(projectKey),
+		Name:        types.StringValue(group.Name),
+		Description: types.StringValue(group.Description),
 		Permissions: foundPermissions,
 	}, nil
 }

@@ -110,11 +110,11 @@ func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Fill in api action struct
 	request := webhooks.CreateRequest{
-		Name:         plan.Name.Value,
+		Name:         plan.Name.ValueString(),
 		Organization: r.p.organization,
-		Project:      plan.Project.Value,
-		Secret:       plan.Secret.Value,
-		Url:          plan.Url.Value,
+		Project:      plan.Project.ValueString(),
+		Secret:       plan.Secret.ValueString(),
+		Url:          plan.Url.ValueString(),
 	}
 
 	res, err := r.p.client.Webhooks.Create(request)
@@ -128,12 +128,12 @@ func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	webhook := res.Webhook
 	var result = Webhook{
-		ID:           types.String{Value: webhook.Key},
-		Key:          types.String{Value: webhook.Key},
-		Organization: types.String{Value: r.p.organization},
+		ID:           types.StringValue(webhook.Key),
+		Key:          types.StringValue(webhook.Key),
+		Organization: types.StringValue(r.p.organization),
 		Project:      plan.Project,
-		Name:         types.String{Value: webhook.Name},
-		Url:          types.String{Value: webhook.Url},
+		Name:         types.StringValue(webhook.Name),
+		Url:          types.StringValue(webhook.Url),
 		Secret:       plan.Secret,
 	}
 	diags = resp.State.Set(ctx, result)
@@ -153,7 +153,7 @@ func (r WebhookResource) Read(ctx context.Context, req resource.ReadRequest, res
 	// Fill in api action struct
 	request := webhooks.ListRequest{
 		Organization: r.p.organization,
-		Project:      state.Project.Value,
+		Project:      state.Project.ValueString(),
 	}
 
 	response, err := r.p.client.Webhooks.List(request)
@@ -166,7 +166,7 @@ func (r WebhookResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.ID.Value, state.Project.Value, r.p.organization, state.Secret.Value); ok {
+	if result, ok := findWebhook(response, state.ID.ValueString(), state.Project.ValueString(), r.p.organization, state.Secret.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -193,11 +193,11 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	// Fill in api action struct
 	request := webhooks.UpdateRequest{
-		Name:   plan.Name.Value,
-		Secret: plan.Secret.Value,
-		Url:    plan.Url.Value,
+		Name:   plan.Name.ValueString(),
+		Secret: plan.Secret.ValueString(),
+		Url:    plan.Url.ValueString(),
 		// Note: this is an inconsistency in the API naming...
-		Webhook: state.Key.Value,
+		Webhook: state.Key.ValueString(),
 	}
 
 	err := r.p.client.Webhooks.Update(request)
@@ -213,7 +213,7 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// Fill in api action struct
 	listRequest := webhooks.ListRequest{
 		Organization: r.p.organization,
-		Project:      state.Project.Value,
+		Project:      state.Project.ValueString(),
 	}
 
 	response, err := r.p.client.Webhooks.List(listRequest)
@@ -226,7 +226,7 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.Key.Value, state.Project.Value, r.p.organization, plan.Secret.Value); ok {
+	if result, ok := findWebhook(response, state.Key.ValueString(), state.Project.ValueString(), r.p.organization, plan.Secret.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -242,7 +242,7 @@ func (r WebhookResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	request := webhooks.DeleteRequest{
 		// Note: this is an inconsistency in the API naming...
-		Webhook: state.Key.Value,
+		Webhook: state.Key.ValueString(),
 	}
 	err := r.p.client.Webhooks.Delete(request)
 	if err != nil {
@@ -282,23 +282,23 @@ func findWebhook(response *webhooks.ListResponse, key, project_key, organization
 	// This is "fixed" in https://github.com/hashicorp/terraform-plugin-framework/pull/523 with explicit constructor
 	// functions that ensure a valid state.
 	// TODO: upgrade terraform provider framework dependency so we can use an explicit constructor
-	var projectKeyIsNull bool
-	if project_key == "" {
-		projectKeyIsNull = true
+	var projectKeyVal types.String
+	if project_key != "" {
+		projectKeyVal = types.StringNull()
 	} else {
-		projectKeyIsNull = false
+		projectKeyVal = types.StringValue(project_key)
 	}
 
 	for _, webhook := range response.Webhooks {
 		if webhook.Key == key {
 			result = Webhook{
-				ID:           types.String{Value: webhook.Key},
-				Key:          types.String{Value: webhook.Key},
-				Organization: types.String{Value: organization},
-				Project:      types.String{Value: project_key, Null: projectKeyIsNull},
-				Name:         types.String{Value: webhook.Name},
-				Url:          types.String{Value: webhook.Url},
-				Secret:       types.String{Value: secret},
+				ID:           types.StringValue(webhook.Key),
+				Key:          types.StringValue(webhook.Key),
+				Organization: types.StringValue(organization),
+				Project:      projectKeyVal,
+				Name:         types.StringValue(webhook.Name),
+				Url:          types.StringValue(webhook.Url),
+				Secret:       types.StringValue(secret),
 			}
 			ok = true
 			break
