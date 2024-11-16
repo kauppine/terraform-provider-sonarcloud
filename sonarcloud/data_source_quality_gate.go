@@ -16,7 +16,7 @@ type QualityGateDataSource struct {
 }
 
 func NewQualityGateDataSource() datasource.DataSource {
-	return &QualityGatesDataSource{}
+	return &QualityGateDataSource{}
 }
 
 func (*QualityGateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
