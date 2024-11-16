@@ -282,12 +282,12 @@ func findWebhook(response *webhooks.ListResponse, key, project_key, organization
 	// This is "fixed" in https://github.com/hashicorp/terraform-plugin-framework/pull/523 with explicit constructor
 	// functions that ensure a valid state.
 	// TODO: upgrade terraform provider framework dependency so we can use an explicit constructor
-	var projectKeyVal types.String
+	/*var projectKeyVal types.String
 	if project_key != "" {
 		projectKeyVal = types.StringNull()
 	} else {
 		projectKeyVal = types.StringValue(project_key)
-	}
+	}*/
 
 	for _, webhook := range response.Webhooks {
 		if webhook.Key == key {
@@ -295,7 +295,7 @@ func findWebhook(response *webhooks.ListResponse, key, project_key, organization
 				ID:           types.StringValue(webhook.Key),
 				Key:          types.StringValue(webhook.Key),
 				Organization: types.StringValue(organization),
-				Project:      projectKeyVal,
+				Project:      types.StringValue(project_key),
 				Name:         types.StringValue(webhook.Name),
 				Url:          types.StringValue(webhook.Url),
 				Secret:       types.StringValue(secret),
