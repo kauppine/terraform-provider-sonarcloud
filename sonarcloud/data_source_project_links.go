@@ -23,7 +23,7 @@ func (*ProjectLinksDataSource) Metadata(ctx context.Context, req datasource.Meta
 	resp.TypeName = req.ProviderTypeName + "_project_links"
 }
 
-func (d ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (*ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This datasource retrieves the list of links for the given project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -66,7 +66,7 @@ func (d ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (d ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataProjectLinks
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
