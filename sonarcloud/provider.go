@@ -2,7 +2,6 @@ package sonarcloud
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
@@ -91,9 +90,13 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	c := sonarcloud.NewClient(organization, token, nil)
+
 	p.client = c
 	p.organization = organization
 	p.configured = true
+
+	resp.DataSourceData = p
+	resp.ResourceData = p
 }
 
 func (p *sonarcloudProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -125,28 +128,4 @@ func (p *sonarcloudProvider) DataSources(ctx context.Context) []func() datasourc
 		NewQualityGatesDataSource,
 		NewWebhooksDataSource,
 	}
-}
-
-// toProvider can be used to cast a generic provider.Provider reference to this specific provider.
-// This is ideally used in DataSourceType.NewDataSource and ResourceType.NewResource calls.
-func toProvider(in any) (*sonarcloudProvider, diag.Diagnostics) {
-	if in == nil {
-		return nil, nil
-	}
-
-	var diags diag.Diagnostics
-
-	p, ok := in.(*sonarcloudProvider)
-
-	if !ok {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			fmt.Sprintf("While creating the data source or resource, an unexpected provider type (%T) was received. "+
-				"This is always a bug in the provider code and should be reported to the provider developers.", in,
-			),
-		)
-		return nil, diags
-	}
-
-	return p, diags
 }

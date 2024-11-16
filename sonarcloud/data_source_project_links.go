@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,6 +16,7 @@ type ProjectLinksDataSource struct {
 }
 
 var _ datasource.DataSource = (*ProjectLinksDataSource)(nil)
+var _ datasource.DataSourceWithConfigure = &ProjectLinksDataSource{}
 
 func NewProjectLinksDataSource() datasource.DataSource {
 	return &ProjectLinksDataSource{}
@@ -74,8 +74,8 @@ func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.C
 	if req.ProviderData == nil {
 		return
 	}
-	client, ok := req.ProviderData.(*sonarcloud.Client)
 
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
@@ -84,7 +84,7 @@ func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.C
 
 		return
 	}
-	d.p.client = client
+	d.p = provider
 }
 
 func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

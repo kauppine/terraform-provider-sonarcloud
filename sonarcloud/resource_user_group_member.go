@@ -15,7 +15,7 @@ import (
 )
 
 type UserGroupMemberResource struct {
-	p sonarcloudProvider
+	p *sonarcloudProvider
 }
 
 func NewUserGroupMemberResource() resource.Resource {
@@ -24,6 +24,24 @@ func NewUserGroupMemberResource() resource.Resource {
 
 func (*UserGroupMemberResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_user_group_member"
+}
+
+func (d *UserGroupMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
 }
 
 func (r UserGroupMemberResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {

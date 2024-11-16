@@ -12,7 +12,7 @@ import (
 )
 
 type ProjectsDataSource struct {
-	p sonarcloudProvider
+	p *sonarcloudProvider
 }
 
 func NewProjectsDataSource() datasource.DataSource {
@@ -21,6 +21,24 @@ func NewProjectsDataSource() datasource.DataSource {
 
 func (*ProjectsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_projects"
+}
+
+func (d *ProjectsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
 }
 
 func (d ProjectsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
