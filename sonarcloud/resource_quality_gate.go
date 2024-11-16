@@ -63,17 +63,11 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						Type:        types.Float64Type,
 						Description: "Index/ID of the Condition.",
 						Computed:    true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
 					},
 					"metric": {
 						Type:        types.StringType,
 						Description: "The metric on which the condition is based.",
 						Required:    true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
 					},
 					"op": {
 						Type:        types.StringType,
@@ -82,17 +76,11 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						Validators: []tfsdk.AttributeValidator{
 							allowedOptions("LT", "GT"),
 						},
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
 					},
 					"error": {
 						Type:        types.StringType,
 						Description: "The value on which the condition errors.",
 						Required:    true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
 					},
 				}),
 			},
