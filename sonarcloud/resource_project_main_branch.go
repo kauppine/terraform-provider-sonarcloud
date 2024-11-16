@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
@@ -15,9 +14,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceProjectMainBranchType struct{}
+type ProjectMainBranchResource struct {
+	p *sonarcloudProvider
+}
 
-func (r resourceProjectMainBranchType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewProjectMainBranchResource() resource.Resource {
+	return &ProjectMainBranchResource{}
+}
+
+func (*ProjectMainBranchResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_project_main_branch"
+}
+
+func (d *ProjectMainBranchResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (r ProjectMainBranchResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `This resource manages a project main branch.
 
@@ -52,17 +79,7 @@ not be permitted by the SonarCloud web API, or may require admin permissions.
 	}, nil
 }
 
-func (r resourceProjectMainBranchType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceProjectMainBranch{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceProjectMainBranch struct {
-	p sonarcloudProvider
-}
-
-func (r resourceProjectMainBranch) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -104,7 +121,7 @@ func (r resourceProjectMainBranch) Create(ctx context.Context, req resource.Crea
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectMainBranch) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ProjectMainBranchResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
@@ -136,7 +153,7 @@ func (r resourceProjectMainBranch) Read(ctx context.Context, req resource.ReadRe
 	}
 }
 
-func (r resourceProjectMainBranch) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ProjectMainBranchResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
@@ -192,7 +209,7 @@ func (r resourceProjectMainBranch) Update(ctx context.Context, req resource.Upda
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectMainBranch) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ProjectMainBranchResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ProjectMainBranch
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -205,7 +222,7 @@ func (r resourceProjectMainBranch) Delete(ctx context.Context, req resource.Dele
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceProjectMainBranch) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ProjectMainBranchResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(

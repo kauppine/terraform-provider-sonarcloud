@@ -5,8 +5,10 @@ import (
 	"os"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -19,6 +21,15 @@ type sonarcloudProvider struct {
 	configured   bool
 	client       *sonarcloud.Client
 	organization string
+}
+
+type providerData struct {
+	Organization types.String `tfsdk:"organization"`
+	Token        types.String `tfsdk:"token"`
+}
+
+func (p *sonarcloudProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "sonarcloud"
 }
 
 func (p *sonarcloudProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -79,43 +90,42 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	c := sonarcloud.NewClient(organization, token, nil)
+
 	p.client = c
 	p.organization = organization
 	p.configured = true
+
+	resp.DataSourceData = p
+	resp.ResourceData = p
 }
 
-func (p *sonarcloudProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"sonarcloud_user_group":             resourceUserGroupType{},
-		"sonarcloud_user_group_member":      resourceUserGroupMemberType{},
-		"sonarcloud_project":                resourceProjectType{},
-		"sonarcloud_project_link":           resourceProjectLinkType{},
-		"sonarcloud_project_main_branch":    resourceProjectMainBranchType{},
-		"sonarcloud_user_token":             resourceUserTokenType{},
-		"sonarcloud_quality_gate":           resourceQualityGateType{},
-		"sonarcloud_quality_gate_selection": resourceQualityGateSelectionType{},
-		"sonarcloud_user_permissions":       resourceUserPermissionsType{},
-		"sonarcloud_user_group_permissions": resourceUserGroupPermissionsType{},
-		"sonarcloud_webhook":                resourceWebhookType{},
-	}, nil
+func (p *sonarcloudProvider) Resources(ctx context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewUserGroupResource,
+		NewUserGroupMemberResource,
+		NewProjectResource,
+		NewProjectLinkResource,
+		NewProjectMainBranchResource,
+		NewUserTokenResource,
+		NewQualityGateResource,
+		NewQualityGateSelectionResource,
+		NewUserPermissionsResource,
+		NewUserGroupPermissionsResource,
+		NewWebhookResource,
+	}
 }
 
-func (p *sonarcloudProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{
-		"sonarcloud_projects":               dataSourceProjectsType{},
-		"sonarcloud_project_links":          dataSourceProjectLinksType{},
-		"sonarcloud_user_group":             dataSourceUserGroupType{},
-		"sonarcloud_user_groups":            dataSourceUserGroupsType{},
-		"sonarcloud_user_group_members":     dataSourceUserGroupMembersType{},
-		"sonarcloud_user_group_permissions": dataSourceUserGroupPermissionsType{},
-		"sonarcloud_user_permissions":       dataSourceUserPermissionsType{},
-		"sonarcloud_quality_gate":           dataSourceQualityGateType{},
-		"sonarcloud_quality_gates":          dataSourceQualityGatesType{},
-		"sonarcloud_webhooks":               dataSourceWebhooksType{},
-	}, nil
-}
-
-type providerData struct {
-	Organization types.String `tfsdk:"organization"`
-	Token        types.String `tfsdk:"token"`
+func (p *sonarcloudProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		NewProjectsDataSource,
+		NewProjectLinksDataSource,
+		NewUserGroupDataSource,
+		NewUserGroupsDataSource,
+		NewUserGroupMembersDataSource,
+		NewUserGroupPermissionsDataSource,
+		NewUserPermissionsDataSource,
+		NewQualityGateDataSource,
+		NewQualityGatesDataSource,
+		NewWebhooksDataSource,
+	}
 }

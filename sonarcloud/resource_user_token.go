@@ -6,15 +6,42 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_tokens"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceUserTokenType struct{}
+type UserTokenResource struct {
+	p *sonarcloudProvider
+}
 
-func (r resourceUserTokenType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserTokenResource() resource.Resource {
+	return &UserTokenResource{}
+}
+
+func (*UserTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_token"
+}
+
+func (d *UserTokenResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (*UserTokenResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages the tokens for a user.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -48,17 +75,7 @@ func (r resourceUserTokenType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (r resourceUserTokenType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceUserToken{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceUserToken struct {
-	p sonarcloudProvider
-}
-
-func (r resourceUserToken) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r UserTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -102,7 +119,7 @@ func (r resourceUserToken) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceUserToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r UserTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Token
 	diags := req.State.Get(ctx, &state)
@@ -135,11 +152,11 @@ func (r resourceUserToken) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 }
 
-func (r resourceUserToken) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r UserTokenResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// NOOP, we always need to recreate
 }
 
-func (r resourceUserToken) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r UserTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state Token
 	diags := req.State.Get(ctx, &state)

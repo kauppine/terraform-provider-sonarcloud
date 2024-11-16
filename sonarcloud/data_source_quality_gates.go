@@ -7,14 +7,41 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceQualityGatesType struct{}
+type QualityGatesDataSource struct {
+	p *sonarcloudProvider
+}
 
-func (d dataSourceQualityGatesType) GetSchema(__ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewQualityGatesDataSource() datasource.DataSource {
+	return &QualityGatesDataSource{}
+}
+
+func (*QualityGatesDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_quality_gates"
+}
+
+func (d *QualityGatesDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (d QualityGatesDataSource) GetSchema(__ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This data source retrieves all Quality Gates for the configured organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -91,17 +118,7 @@ func (d dataSourceQualityGatesType) GetSchema(__ context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (d dataSourceQualityGatesType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceQualityGates{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceQualityGates struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceQualityGates) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d QualityGatesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var diags diag.Diagnostics
 
 	request := qualitygates.ListRequest{}

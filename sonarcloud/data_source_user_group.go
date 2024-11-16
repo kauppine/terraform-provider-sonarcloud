@@ -7,14 +7,41 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceUserGroupType struct{}
+type UserGroupDataSource struct {
+	p *sonarcloudProvider
+}
 
-func (d dataSourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserGroupDataSource() datasource.DataSource {
+	return &UserGroupDataSource{}
+}
+
+func (*UserGroupDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_group"
+}
+
+func (d *UserGroupDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (d UserGroupDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This data source retrieves a single user group.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -47,17 +74,7 @@ func (d dataSourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (d dataSourceUserGroupType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceUserGroup{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceUserGroup struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceUserGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d UserGroupDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values from config
 	var config Group
 	diags := req.Config.Get(ctx, &config)

@@ -8,14 +8,41 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceUserGroupsType struct{}
+type UserGroupsDataSource struct {
+	p *sonarcloudProvider
+}
 
-func (d dataSourceUserGroupsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserGroupsDataSource() datasource.DataSource {
+	return &UserGroupsDataSource{}
+}
+
+func (*UserGroupsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_groups"
+}
+
+func (d *UserGroupsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (d UserGroupsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This data source retrieves a list of user groups for the configured organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -58,17 +85,7 @@ func (d dataSourceUserGroupsType) GetSchema(_ context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (d dataSourceUserGroupsType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceUserGroups{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceUserGroups struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceUserGroups) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d UserGroupsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var diags diag.Diagnostics
 
 	request := user_groups.SearchRequest{}

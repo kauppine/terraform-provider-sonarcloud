@@ -7,14 +7,26 @@ import (
 	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceProjectLinksType struct{}
+type ProjectLinksDataSource struct {
+	p *sonarcloudProvider
+}
 
-func (d dataSourceProjectLinksType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ datasource.DataSource = (*ProjectLinksDataSource)(nil)
+var _ datasource.DataSourceWithConfigure = &ProjectLinksDataSource{}
+
+func NewProjectLinksDataSource() datasource.DataSource {
+	return &ProjectLinksDataSource{}
+}
+
+func (d *ProjectLinksDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_project_links"
+}
+
+func (d *ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This datasource retrieves the list of links for the given project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -57,17 +69,25 @@ func (d dataSourceProjectLinksType) GetSchema(_ context.Context) (tfsdk.Schema, 
 	}, nil
 }
 
-func (d dataSourceProjectLinksType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceProjectLinks{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
+func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
 }
 
-type dataSourceProjectLinks struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceProjectLinks) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *ProjectLinksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataProjectLinks
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

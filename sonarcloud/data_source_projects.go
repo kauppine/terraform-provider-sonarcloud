@@ -7,14 +7,41 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceProjectsType struct{}
+type ProjectsDataSource struct {
+	p *sonarcloudProvider
+}
 
-func (d dataSourceProjectsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewProjectsDataSource() datasource.DataSource {
+	return &ProjectsDataSource{}
+}
+
+func (*ProjectsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_projects"
+}
+
+func (d *ProjectsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (d ProjectsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This data source retrieves a list of projects for the configured organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -52,17 +79,7 @@ func (d dataSourceProjectsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (d dataSourceProjectsType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceProjects{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceProjects struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceProjects) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d ProjectsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var diags diag.Diagnostics
 
 	request := projects.SearchRequest{}

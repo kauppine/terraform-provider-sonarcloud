@@ -13,15 +13,42 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceUserPermissionsType struct{}
+type UserPermissionsResource struct {
+	p *sonarcloudProvider
+}
 
-func (r resourceUserPermissionsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserPermissionsResource() resource.Resource {
+	return &UserPermissionsResource{}
+}
+
+func (*UserPermissionsResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_permissions"
+}
+
+func (d *UserPermissionsResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	provider, ok := req.ProviderData.(*sonarcloudProvider)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *sonarcloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+	d.p = provider
+}
+
+func (r UserPermissionsResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages the permissions of a user for the whole organization or a specific project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -80,17 +107,7 @@ func (r resourceUserPermissionsType) GetSchema(_ context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (r resourceUserPermissionsType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceUserPermissions{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceUserPermissions struct {
-	p sonarcloudProvider
-}
-
-func (r resourceUserPermissions) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r UserPermissionsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -175,7 +192,7 @@ func (r resourceUserPermissions) Create(ctx context.Context, req resource.Create
 	}
 }
 
-func (r resourceUserPermissions) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r UserPermissionsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state UserPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -216,7 +233,7 @@ func (r resourceUserPermissions) Read(ctx context.Context, req resource.ReadRequ
 	}
 }
 
-func (r resourceUserPermissions) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r UserPermissionsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state UserPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -290,7 +307,7 @@ func (r resourceUserPermissions) Update(ctx context.Context, req resource.Update
 	}
 }
 
-func (r resourceUserPermissions) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r UserPermissionsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state UserPermissions
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -318,7 +335,7 @@ func (r resourceUserPermissions) Delete(ctx context.Context, req resource.Delete
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceUserPermissions) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r UserPermissionsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) < 1 || len(idParts) > 2 || idParts[0] == "" {
 		resp.Diagnostics.AddError(
