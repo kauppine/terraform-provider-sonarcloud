@@ -7,14 +7,23 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceQualityGateType struct{}
+type QualityGateDataSource struct {
+	p sonarcloudProvider
+}
 
-func (d dataSourceQualityGateType) GetSchema(__ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewQualityGateDataSource() datasource.DataSource {
+	return &QualityGatesDataSource{}
+}
+
+func (*QualityGateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_quality_gate"
+}
+
+func (d QualityGateDataSource) GetSchema(__ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This Data Source retrieves a single Quality Gate for the configured Organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -80,17 +89,7 @@ func (d dataSourceQualityGateType) GetSchema(__ context.Context) (tfsdk.Schema, 
 	}, nil
 }
 
-func (d dataSourceQualityGateType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceQualityGate{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceQualityGate struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceQualityGate) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d QualityGateDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config QualityGate
 	diags := req.Config.Get(ctx, &config)
 	if resp.Diagnostics.HasError() {

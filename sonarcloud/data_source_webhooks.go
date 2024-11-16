@@ -7,14 +7,23 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/webhooks"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceWebhooksType struct{}
+type WebhooksDataSource struct {
+	p sonarcloudProvider
+}
 
-func (d dataSourceWebhooksType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewWebhooksDataSource() datasource.DataSource {
+	return &WebhooksDataSource{}
+}
+
+func (*WebhooksDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_webhooks"
+}
+
+func (d WebhooksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This datasource retrieves the list of webhooks for a project or the organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -57,17 +66,7 @@ func (d dataSourceWebhooksType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (d dataSourceWebhooksType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceWebhooks{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceWebhooks struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceWebhooks) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d WebhooksDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataWebhooks
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

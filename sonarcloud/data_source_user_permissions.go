@@ -8,15 +8,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceUserPermissionsType struct{}
+type UserPermissionsDataSource struct {
+	p sonarcloudProvider
+}
 
-func (d dataSourceUserPermissionsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserPermissionsDataSource() datasource.DataSource {
+	return &UserPermissionsDataSource{}
+}
+
+func (*UserPermissionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_permissions"
+}
+
+func (d UserPermissionsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This data source retrieves all the users of an organization and their permissions.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -63,17 +72,7 @@ func (d dataSourceUserPermissionsType) GetSchema(_ context.Context) (tfsdk.Schem
 	}, nil
 }
 
-func (d dataSourceUserPermissionsType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceUserPermissions{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type dataSourceUserPermissions struct {
-	p sonarcloudProvider
-}
-
-func (d dataSourceUserPermissions) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d UserPermissionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataUserPermissions
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

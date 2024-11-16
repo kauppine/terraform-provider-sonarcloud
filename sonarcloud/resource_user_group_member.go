@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,9 +14,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceUserGroupMemberType struct{}
+type UserGroupMemberResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceUserGroupMemberType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserGroupMemberResource() resource.Resource {
+	return &UserGroupMemberResource{}
+}
+
+func (*UserGroupMemberResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_group_member"
+}
+
+func (r UserGroupMemberResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages a single member of a user group.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -45,17 +54,7 @@ func (r resourceUserGroupMemberType) GetSchema(_ context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (r resourceUserGroupMemberType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceUserGroupMember{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceUserGroupMember struct {
-	p sonarcloudProvider
-}
-
-func (r resourceUserGroupMember) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r UserGroupMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -97,7 +96,7 @@ func (r resourceUserGroupMember) Create(ctx context.Context, req resource.Create
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceUserGroupMember) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state GroupMember
 	diags := req.State.Get(ctx, &state)
@@ -130,11 +129,11 @@ func (r resourceUserGroupMember) Read(ctx context.Context, req resource.ReadRequ
 	}
 }
 
-func (r resourceUserGroupMember) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r UserGroupMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// NOOP, we always need to recreate
 }
 
-func (r resourceUserGroupMember) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r UserGroupMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state GroupMember
 	diags := req.State.Get(ctx, &state)
@@ -162,7 +161,7 @@ func (r resourceUserGroupMember) Delete(ctx context.Context, req resource.Delete
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceUserGroupMember) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r UserGroupMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(

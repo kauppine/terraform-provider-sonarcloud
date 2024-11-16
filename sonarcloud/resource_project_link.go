@@ -8,15 +8,24 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceProjectLinkType struct{}
+type ProjectLinkResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceProjectLinkType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewProjectLinkResource() resource.Resource {
+	return &ProjectLinkResource{}
+}
+
+func (*ProjectLinkResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_project_link"
+}
+
+func (r ProjectLinkResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource represents a project link.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -53,17 +62,7 @@ func (r resourceProjectLinkType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (r resourceProjectLinkType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceProjectLink{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceProjectLink struct {
-	p sonarcloudProvider
-}
-
-func (r resourceProjectLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ProjectLinkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -109,7 +108,7 @@ func (r resourceProjectLink) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProjectLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ProjectLinkResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state ProjectLink
 	diags := req.State.Get(ctx, &state)
@@ -141,11 +140,11 @@ func (r resourceProjectLink) Read(ctx context.Context, req resource.ReadRequest,
 	}
 }
 
-func (r resourceProjectLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ProjectLinkResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// NOOP, we always need to recreate
 }
 
-func (r resourceProjectLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ProjectLinkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ProjectLink
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -168,7 +167,7 @@ func (r resourceProjectLink) Delete(ctx context.Context, req resource.DeleteRequ
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceProjectLink) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ProjectLinkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(

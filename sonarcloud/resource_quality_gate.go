@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
@@ -14,9 +13,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceQualityGateType struct{}
+type QualityGateResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewQualityGateResource() resource.Resource {
+	return &QualityGateResource{}
+}
+
+func (*QualityGateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_quality_gate"
+}
+
+func (r QualityGateResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages a Quality Gate",
 		Attributes: map[string]tfsdk.Attribute{
@@ -88,17 +97,7 @@ func (r resourceQualityGateType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (r resourceQualityGateType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceQualityGate{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceQualityGate struct {
-	p sonarcloudProvider
-}
-
-func (r resourceQualityGate) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -200,7 +199,7 @@ func (r resourceQualityGate) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceQualityGate) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r QualityGateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	//Retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -237,7 +236,7 @@ func (r resourceQualityGate) Read(ctx context.Context, req resource.ReadRequest,
 // https://github.com/adnsio/terraform-provider-k0s/blob/c8db5204e70e15484973d5680fe14ed184e719ef/internal/provider/cluster_resource.go#L366
 // https://github.com/devopsarr/terraform-provider-sonarr/blob/078ba51ca03a7782af5fbaaf48f6ebd15284116c/internal/provider/quality_profile_resource.go (DOUBLE NESTED!!! :O)
 // Thanks to those who wrote the above resources, they really helped me (Arnav Bhutani @Bhutania) out :)
-func (r resourceQualityGate) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r QualityGateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	//retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -381,7 +380,7 @@ func (r resourceQualityGate) Update(ctx context.Context, req resource.UpdateRequ
 	}
 }
 
-func (r resourceQualityGate) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r QualityGateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state QualityGate
 	diags := req.State.Get(ctx, &state)
@@ -423,7 +422,7 @@ func (r resourceQualityGate) Delete(ctx context.Context, req resource.DeleteRequ
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceQualityGate) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r QualityGateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
 

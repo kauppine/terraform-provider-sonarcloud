@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -14,9 +13,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceProjectType struct{}
+type ProjectResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceProjectType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewProjectResource() resource.Resource {
+	return &ProjectResource{}
+}
+
+func (*ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_project"
+}
+
+func (r ProjectResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages a project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -58,17 +67,7 @@ func (r resourceProjectType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	}, nil
 }
 
-func (r resourceProjectType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceProject{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceProject struct {
-	p sonarcloudProvider
-}
-
-func (r resourceProject) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ProjectResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -114,7 +113,7 @@ func (r resourceProject) Create(ctx context.Context, req resource.CreateRequest,
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceProject) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ProjectResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Project
 	diags := req.State.Get(ctx, &state)
@@ -146,7 +145,7 @@ func (r resourceProject) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 }
 
-func (r resourceProject) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ProjectResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state Project
 	diags := req.State.Get(ctx, &state)
@@ -220,7 +219,7 @@ func (r resourceProject) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 }
 
-func (r resourceProject) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ProjectResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state Project
 	diags := req.State.Get(ctx, &state)
@@ -245,6 +244,6 @@ func (r resourceProject) Delete(ctx context.Context, req resource.DeleteRequest,
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceProject) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ProjectResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("key"), req, resp)
 }

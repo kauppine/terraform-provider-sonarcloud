@@ -11,13 +11,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 )
 
-type resourceWebhookType struct{}
+type WebhookResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceWebhookType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewWebhookResource() resource.Resource {
+	return &WebhookResource{}
+}
+
+func (*WebhookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_webhooks"
+}
+
+func (*WebhookResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource represents a project or organization webhook.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -64,17 +72,7 @@ func (r resourceWebhookType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	}, nil
 }
 
-func (r resourceWebhookType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceWebhook{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceWebhook struct {
-	p sonarcloudProvider
-}
-
-func (r resourceWebhook) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -125,7 +123,7 @@ func (r resourceWebhook) Create(ctx context.Context, req resource.CreateRequest,
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceWebhook) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r WebhookResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Webhook
 	diags := req.State.Get(ctx, &state)
@@ -158,7 +156,7 @@ func (r resourceWebhook) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 }
 
-func (r resourceWebhook) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state Webhook
 	diags := req.State.Get(ctx, &state)
@@ -216,7 +214,7 @@ func (r resourceWebhook) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 }
 
-func (r resourceWebhook) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r WebhookResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state Webhook
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -240,7 +238,7 @@ func (r resourceWebhook) Delete(ctx context.Context, req resource.DeleteRequest,
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceWebhook) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r WebhookResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 	if len(idParts) < 1 || len(idParts) > 2 || idParts[0] == "" {
 		resp.Diagnostics.AddError(

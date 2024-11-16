@@ -7,15 +7,24 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceQualityGateSelectionType struct{}
+type QualityGateSelectionResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceQualityGateSelectionType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewQualityGateSelectionResource() resource.Resource {
+	return &QualityGateSelectionResource{}
+}
+
+func (*QualityGateSelectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_quality_gate_selection"
+}
+
+func (r QualityGateSelectionResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource selects a quality gate for one or more projects",
 		Attributes: map[string]tfsdk.Attribute{
@@ -41,17 +50,7 @@ func (r resourceQualityGateSelectionType) GetSchema(_ context.Context) (tfsdk.Sc
 	}, nil
 }
 
-func (r resourceQualityGateSelectionType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceQualityGateSelection{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceQualityGateSelection struct {
-	p sonarcloudProvider
-}
-
-func (r resourceQualityGateSelection) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -115,7 +114,7 @@ func (r resourceQualityGateSelection) Create(ctx context.Context, req resource.C
 	}
 }
 
-func (r resourceQualityGateSelection) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r QualityGateSelectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -145,7 +144,7 @@ func (r resourceQualityGateSelection) Read(ctx context.Context, req resource.Rea
 	}
 }
 
-func (r resourceQualityGateSelection) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r QualityGateSelectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -218,7 +217,7 @@ func (r resourceQualityGateSelection) Update(ctx context.Context, req resource.U
 	}
 }
 
-func (r resourceQualityGateSelection) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r QualityGateSelectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state Selection
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

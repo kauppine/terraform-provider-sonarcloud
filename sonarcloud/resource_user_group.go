@@ -6,7 +6,6 @@ import (
 	"math/big"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
@@ -15,9 +14,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceUserGroupType struct{}
+type UserGroupResource struct {
+	p sonarcloudProvider
+}
 
-func (r resourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func NewUserGroupResource() resource.Resource {
+	return &UserGroupResource{}
+}
+
+func (*UserGroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user_group"
+}
+
+func (r UserGroupResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "This resource manages a user group.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -49,17 +58,7 @@ func (r resourceUserGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (r resourceUserGroupType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceUserGroup{
-		p: *(p.(*sonarcloudProvider)),
-	}, nil
-}
-
-type resourceUserGroup struct {
-	p sonarcloudProvider
-}
-
-func (r resourceUserGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r UserGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -105,7 +104,7 @@ func (r resourceUserGroup) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceUserGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r UserGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -137,7 +136,7 @@ func (r resourceUserGroup) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 }
 
-func (r resourceUserGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r UserGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -201,7 +200,7 @@ func (r resourceUserGroup) Update(ctx context.Context, req resource.UpdateReques
 	}
 }
 
-func (r resourceUserGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r UserGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state Group
 	diags := req.State.Get(ctx, &state)
@@ -226,6 +225,6 @@ func (r resourceUserGroup) Delete(ctx context.Context, req resource.DeleteReques
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceUserGroup) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r UserGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
