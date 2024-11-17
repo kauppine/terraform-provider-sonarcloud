@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/webhooks"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,51 +44,44 @@ func (d *WebhookResource) Configure(ctx context.Context, req resource.ConfigureR
 	d.p = provider
 }
 
-func (*WebhookResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (*WebhookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource represents a project or organization webhook.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID of the webhook, this is equal to its key.",
 			},
-			"key": {
-				Type:        types.StringType,
+			"key": schema.StringAttribute{
 				Computed:    true,
 				Description: "Key of the webhook.",
 			},
-			"project": {
-				Type:        types.StringType,
+			"project": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project to add the webhook to. If empty, the webhook will be added to the organization.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"organization": {
-				Type:        types.StringType,
+			"organization": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the organization that will own the webhook.",
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the webhook.",
 			},
-			"secret": {
-				Type:        types.StringType,
+			"secret": schema.StringAttribute{
 				Optional:    true,
 				Description: "If provided, secret will be used as the key to generate the HMAC hex (lowercase) digest value in the 'X-Sonar-Webhook-HMAC-SHA256' header.",
 				Sensitive:   true,
 			},
-			"url": {
-				Type:        types.StringType,
+			"url": schema.StringAttribute{
 				Required:    true,
 				Description: "The url of the webhook.",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

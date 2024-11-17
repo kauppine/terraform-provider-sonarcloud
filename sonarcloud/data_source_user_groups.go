@@ -7,8 +7,8 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,47 +42,43 @@ func (d *UserGroupsDataSource) Configure(ctx context.Context, req datasource.Con
 	d.p = provider
 }
 
-func (d UserGroupsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d UserGroupsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This data source retrieves a list of user groups for the configured organization.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"groups": {
+			"groups": schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The groups of this organization.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The ID of the user group.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "The ID of the user group.",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name of the user group.",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "The description of the user group.",
+						},
+						"members_count": schema.NumberAttribute{
+							Computed:    true,
+							Description: "The number of members in this user group.",
+						},
+						"default": schema.BoolAttribute{
+							Computed:    true,
+							Description: "Whether new members are added to this user group per default or not.",
+						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name of the user group.",
-					},
-					"description": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The description of the user group.",
-					},
-					"members_count": {
-						Type:        types.Float64Type,
-						Computed:    true,
-						Description: "The number of members in this user group.",
-					},
-					"default": {
-						Type:        types.BoolType,
-						Computed:    true,
-						Description: "Whether new members are added to this user group per default or not.",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d UserGroupsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

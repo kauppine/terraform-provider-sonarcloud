@@ -7,8 +7,7 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,48 +41,45 @@ func (d *UserGroupPermissionsDataSource) Configure(ctx context.Context, req data
 	d.p = provider
 }
 
-func (d UserGroupPermissionsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d UserGroupPermissionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This data source retrieves all the user groups and their permissions.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The implicit ID of the data source.",
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project to read the user group permissions for.",
 			},
-			"groups": {
+			"groups": schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The groups and their permissions.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The ID of the user group.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "The ID of the user group.",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name of the user group.",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "The description of the user group.",
+						},
+						"permissions": schema.SetAttribute{
+							ElementType: types.StringType,
+							Computed:    true,
+							Description: "The permissions of this user group.",
+						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name of the user group.",
-					},
-					"description": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The description of the user group.",
-					},
-					"permissions": {
-						Type:        types.SetType{ElemType: types.StringType},
-						Computed:    true,
-						Description: "The permissions of this user group.",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d UserGroupPermissionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

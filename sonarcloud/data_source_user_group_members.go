@@ -6,8 +6,7 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,37 +40,35 @@ func (d *UserGroupMembersDataSource) Configure(ctx context.Context, req datasour
 	d.p = provider
 }
 
-func (d UserGroupMembersDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d UserGroupMembersDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This data source retrieves a list of users for the given group.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"group": {
-				Type:        types.StringType,
+			"group": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the group.",
 			},
-			"users": {
+			"users": schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The users of the group.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"login": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The login of this user",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"login": schema.StringAttribute{
+							Computed:    true,
+							Description: "The login of this user",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name of this user",
+						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name of this user",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d UserGroupMembersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

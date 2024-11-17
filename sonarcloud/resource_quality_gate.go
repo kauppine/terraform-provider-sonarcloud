@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,76 +47,69 @@ func (d *QualityGateResource) Configure(ctx context.Context, req resource.Config
 	d.p = provider
 }
 
-func (r QualityGateResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r QualityGateResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages a Quality Gate",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Description: "Implicit Terraform ID",
 				Computed:    true,
 			},
-			"gate_id": {
-				Type:        types.Float64Type,
+			"gate_id": schema.Float64Attribute{
 				Description: "Id computed by SonarCloud servers",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Float64{
+					float64planmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Description: "Name of the Quality Gate.",
 				Required:    true,
 			},
-			"is_built_in": {
-				Type:        types.BoolType,
+			"is_built_in": schema.BoolAttribute{
 				Description: "Defines whether the quality gate is built in.",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"is_default": {
-				Type:        types.BoolType,
+			"is_default": schema.BoolAttribute{
 				Description: "Defines whether the quality gate is the default gate for an organization. **WARNING**: Must be assigned to one quality gate per organization at all times.",
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"conditions": {
+			"conditions": schema.SetNestedAttribute{
 				Optional:    true,
 				Description: "The conditions of this quality gate. Please query https://sonarcloud.io/api/metrics/search for an up-to-date list of conditions.",
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.Float64Type,
-						Description: "Index/ID of the Condition.",
-						Computed:    true,
-					},
-					"metric": {
-						Type:        types.StringType,
-						Description: "The metric on which the condition is based.",
-						Required:    true,
-					},
-					"op": {
-						Type:        types.StringType,
-						Description: "Operation on which the metric is evaluated must be either: LT, GT.",
-						Optional:    true,
-						Validators: []tfsdk.AttributeValidator{
-							allowedOptions("LT", "GT"),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.Float64Attribute{
+							Description: "Index/ID of the Condition.",
+							Computed:    true,
+						},
+						"metric": schema.StringAttribute{
+							Description: "The metric on which the condition is based.",
+							Required:    true,
+						},
+						"op": schema.StringAttribute{
+							Description: "Operation on which the metric is evaluated must be either: LT, GT.",
+							Optional:    true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("LT", "GT"),
+							},
+						},
+						"error": schema.StringAttribute{
+							Description: "The value on which the condition errors.",
+							Required:    true,
 						},
 					},
-					"error": {
-						Type:        types.StringType,
-						Description: "The value on which the condition errors.",
-						Required:    true,
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r QualityGateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

@@ -6,8 +6,7 @@ import (
 
 	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,47 +25,43 @@ func (d *ProjectLinksDataSource) Metadata(ctx context.Context, req datasource.Me
 	resp.TypeName = req.ProviderTypeName + "_project_links"
 }
 
-func (d *ProjectLinksDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d *ProjectLinksDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This datasource retrieves the list of links for the given project.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project.",
 			},
-			"links": {
+			"links": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "The links of this project.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "ID of the link.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "ID of the link.",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name the link.",
+						},
+						"type": schema.StringAttribute{
+							Computed:    true,
+							Description: "The type of the link.",
+						},
+						"url": schema.StringAttribute{
+							Computed:    true,
+							Description: "The url of the link.",
+						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name the link.",
-					},
-					"type": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The type of the link.",
-					},
-					"url": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The url of the link.",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d *ProjectLinksDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {

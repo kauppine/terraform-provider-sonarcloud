@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,46 +46,43 @@ func (d *ProjectResource) Configure(ctx context.Context, req resource.ConfigureR
 	d.p = provider
 }
 
-func (r ProjectResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages a project.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the project. **Warning:** forces project recreation when changed.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 255),
+				Validators: []validator.String{
+
+					stringvalidator.LengthBetween(1, 255),
 				},
 			},
-			"key": {
-				Type:        types.StringType,
+			"key": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the project. **Warning**: must be globally unique.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 400),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 400),
 				},
 			},
-			"visibility": {
-				Type:     types.StringType,
+			"visibility": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
 				Description: "The visibility of the project. Use `private` to only share it with your organization." +
 					" Use `public` if the project should be visible to everyone. Defaults to the organization's default visibility." +
 					" **Note:** private projects are only available when you have a SonarCloud subscription.",
-				Validators: []tfsdk.AttributeValidator{
-					allowedOptions("public", "private"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("public", "private"),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r ProjectResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

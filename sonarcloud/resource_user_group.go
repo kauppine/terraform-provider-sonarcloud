@@ -7,10 +7,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,36 +43,31 @@ func (d *UserGroupResource) Configure(ctx context.Context, req resource.Configur
 	d.p = provider
 }
 
-func (r UserGroupResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r UserGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages a user group.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the user group.",
 			},
-			"description": {
-				Type:        types.StringType,
+			"description": schema.StringAttribute{
 				Optional:    true,
 				Description: "The description for the user group.",
 			},
-			"default": {
-				Type:        types.BoolType,
+			"default": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the group is the default group or not.",
 			},
-			"members_count": {
-				Type:        types.NumberType,
+			"members_count": schema.NumberAttribute{
 				Computed:    true,
 				Description: "The number of members this group has.",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r UserGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,39 +47,36 @@ func (d *ProjectMainBranchResource) Configure(ctx context.Context, req resource.
 	d.p = provider
 }
 
-func (r ProjectMainBranchResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r ProjectMainBranchResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `This resource manages a project main branch.
 
 Note that certain operations, such as the deletion of a project's main branch configuration, may
 not be permitted by the SonarCloud web API, or may require admin permissions.
 		`,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the project main branch.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 255),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 255),
 				},
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the project.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 400),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 400),
 				},
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

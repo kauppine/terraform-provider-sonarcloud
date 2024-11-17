@@ -7,9 +7,7 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,51 +41,45 @@ func (d *UserPermissionsDataSource) Configure(ctx context.Context, req datasourc
 	d.p = provider
 }
 
-func (d UserPermissionsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d UserPermissionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This data source retrieves all the users of an organization and their permissions.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The implicit ID of the data source.",
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project to read the user permissions for.",
 			},
-			"users": {
+			"users": schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The users and their permissions.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"login": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The login of the user.",
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.RequiresReplace(),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"login": schema.StringAttribute{
+							Computed:    true,
+							Description: "The login of the user.",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name of the user.",
+						},
+						"permissions": schema.SetAttribute{
+							ElementType: types.StringType,
+							Required:    true,
+							Description: "The permissions of the user.",
+						},
+						"avatar": schema.StringAttribute{
+							Computed:    true,
+							Description: "The avatar ID of the user.",
 						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name of the user.",
-					},
-					"permissions": {
-						Type:        types.SetType{ElemType: types.StringType},
-						Required:    true,
-						Description: "The permissions of the user.",
-					},
-					"avatar": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The avatar ID of the user.",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d UserPermissionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

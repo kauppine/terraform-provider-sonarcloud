@@ -10,11 +10,15 @@ import (
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/permissions"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -48,41 +52,37 @@ func (d *UserPermissionsResource) Configure(ctx context.Context, req resource.Co
 	d.p = provider
 }
 
-func (r UserPermissionsResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r UserPermissionsResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages the permissions of a user for the whole organization or a specific project.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Description: "The implicit ID of the resource.",
 				Computed:    true,
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project to restrict the permissions to.",
 			},
-			"login": {
-				Type:        types.StringType,
+			"login": schema.StringAttribute{
 				Required:    true,
 				Description: "The login of the user to set the permissions for.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "The name of the user.",
 			},
-			"permissions": {
-				Type:     types.SetType{ElemType: types.StringType},
-				Required: true,
+			"permissions": schema.SetAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 				Description: "List of permissions to grant." +
 					" Available global permissions: [`admin`, `profileadmin`, `gateadmin`, `scan`, `provisioning`]." +
 					" Available project permissions: ['admin`, `scan`, `codeviewer`, `issueadmin`, `securityhotspotadmin`, `user`].",
-				Validators: []tfsdk.AttributeValidator{
-					allowedSetOptions(
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(stringvalidator.OneOf(
 						// Global permissions
 						"admin",
 						"profileadmin",
@@ -95,16 +95,15 @@ func (r UserPermissionsResource) GetSchema(_ context.Context) (tfsdk.Schema, dia
 						"issueadmin",
 						"securityhotspotadmin",
 						"user",
-					),
+					)),
 				},
 			},
-			"avatar": {
-				Type:        types.StringType,
+			"avatar": schema.StringAttribute{
 				Computed:    true,
 				Description: "The avatar ID of the user.",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r UserPermissionsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

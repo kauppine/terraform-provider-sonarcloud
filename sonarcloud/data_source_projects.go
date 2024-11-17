@@ -6,8 +6,8 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,42 +41,39 @@ func (d *ProjectsDataSource) Configure(ctx context.Context, req datasource.Confi
 	d.p = provider
 }
 
-func (d ProjectsDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d ProjectsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This data source retrieves a list of projects for the configured organization.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"projects": {
+			"projects": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "The projects of this organization.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "ID of the project. Equals to the project name.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "ID of the project. Equals to the project name.",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "The name of the project.",
+						},
+						"key": schema.StringAttribute{
+							Required:    true,
+							Description: "The key of the project.",
+						},
+						"visibility": schema.StringAttribute{
+							Computed:    true,
+							Description: "The visibility of the project.",
+						},
 					},
-					"name": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The name of the project.",
-					},
-					"key": {
-						Type:        types.StringType,
-						Required:    true,
-						Description: "The key of the project.",
-					},
-					"visibility": {
-						Type:        types.StringType,
-						Computed:    true,
-						Description: "The visibility of the project.",
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d ProjectsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

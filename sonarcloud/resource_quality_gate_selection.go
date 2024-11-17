@@ -6,9 +6,10 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,30 +43,28 @@ func (d *QualityGateSelectionResource) Configure(ctx context.Context, req resour
 	d.p = provider
 }
 
-func (r QualityGateSelectionResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r QualityGateSelectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource selects a quality gate for one or more projects",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Description: "The implicit ID of the resource",
 				Computed:    true,
 			},
-			"gate_id": {
-				Type:        types.StringType,
+			"gate_id": schema.StringAttribute{
 				Description: "The ID of the quality gate that is selected for the project(s).",
 				Required:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"project_keys": {
-				Type:        types.SetType{ElemType: types.StringType},
+			"project_keys": schema.SetAttribute{
+				ElementType: types.StringType,
 				Description: "The Keys of the projects which have been selected on the referenced quality gate",
 				Required:    true,
 			},
 		},
-	}, nil
+	}
 }
 
 func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
