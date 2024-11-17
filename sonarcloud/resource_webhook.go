@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/webhooks"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,51 +44,44 @@ func (d *WebhookResource) Configure(ctx context.Context, req resource.ConfigureR
 	d.p = provider
 }
 
-func (*WebhookResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (*WebhookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource represents a project or organization webhook.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID of the webhook, this is equal to its key.",
 			},
-			"key": {
-				Type:        types.StringType,
+			"key": schema.StringAttribute{
 				Computed:    true,
 				Description: "Key of the webhook.",
 			},
-			"project": {
-				Type:        types.StringType,
+			"project": schema.StringAttribute{
 				Optional:    true,
 				Description: "The key of the project to add the webhook to. If empty, the webhook will be added to the organization.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"organization": {
-				Type:        types.StringType,
+			"organization": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the organization that will own the webhook.",
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the webhook.",
 			},
-			"secret": {
-				Type:        types.StringType,
+			"secret": schema.StringAttribute{
 				Optional:    true,
 				Description: "If provided, secret will be used as the key to generate the HMAC hex (lowercase) digest value in the 'X-Sonar-Webhook-HMAC-SHA256' header.",
 				Sensitive:   true,
 			},
-			"url": {
-				Type:        types.StringType,
+			"url": schema.StringAttribute{
 				Required:    true,
 				Description: "The url of the webhook.",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -110,11 +104,11 @@ func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Fill in api action struct
 	request := webhooks.CreateRequest{
-		Name:         plan.Name.Value,
+		Name:         plan.Name.ValueString(),
 		Organization: r.p.organization,
-		Project:      plan.Project.Value,
-		Secret:       plan.Secret.Value,
-		Url:          plan.Url.Value,
+		Project:      plan.Project.ValueString(),
+		Secret:       plan.Secret.ValueString(),
+		Url:          plan.Url.ValueString(),
 	}
 
 	res, err := r.p.client.Webhooks.Create(request)
@@ -128,12 +122,12 @@ func (r WebhookResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	webhook := res.Webhook
 	var result = Webhook{
-		ID:           types.String{Value: webhook.Key},
-		Key:          types.String{Value: webhook.Key},
-		Organization: types.String{Value: r.p.organization},
+		ID:           types.StringValue(webhook.Key),
+		Key:          types.StringValue(webhook.Key),
+		Organization: types.StringValue(r.p.organization),
 		Project:      plan.Project,
-		Name:         types.String{Value: webhook.Name},
-		Url:          types.String{Value: webhook.Url},
+		Name:         types.StringValue(webhook.Name),
+		Url:          types.StringValue(webhook.Url),
 		Secret:       plan.Secret,
 	}
 	diags = resp.State.Set(ctx, result)
@@ -153,7 +147,7 @@ func (r WebhookResource) Read(ctx context.Context, req resource.ReadRequest, res
 	// Fill in api action struct
 	request := webhooks.ListRequest{
 		Organization: r.p.organization,
-		Project:      state.Project.Value,
+		Project:      state.Project.ValueString(),
 	}
 
 	response, err := r.p.client.Webhooks.List(request)
@@ -166,7 +160,7 @@ func (r WebhookResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.ID.Value, state.Project.Value, r.p.organization, state.Secret.Value); ok {
+	if result, ok := findWebhook(response, state.ID.ValueString(), state.Project.ValueString(), r.p.organization, state.Secret.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -193,11 +187,11 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	// Fill in api action struct
 	request := webhooks.UpdateRequest{
-		Name:   plan.Name.Value,
-		Secret: plan.Secret.Value,
-		Url:    plan.Url.Value,
+		Name:   plan.Name.ValueString(),
+		Secret: plan.Secret.ValueString(),
+		Url:    plan.Url.ValueString(),
 		// Note: this is an inconsistency in the API naming...
-		Webhook: state.Key.Value,
+		Webhook: state.Key.ValueString(),
 	}
 
 	err := r.p.client.Webhooks.Update(request)
@@ -213,7 +207,7 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// Fill in api action struct
 	listRequest := webhooks.ListRequest{
 		Organization: r.p.organization,
-		Project:      state.Project.Value,
+		Project:      state.Project.ValueString(),
 	}
 
 	response, err := r.p.client.Webhooks.List(listRequest)
@@ -226,7 +220,7 @@ func (r WebhookResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findWebhook(response, state.Key.Value, state.Project.Value, r.p.organization, plan.Secret.Value); ok {
+	if result, ok := findWebhook(response, state.Key.ValueString(), state.Project.ValueString(), r.p.organization, plan.Secret.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -242,7 +236,7 @@ func (r WebhookResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	request := webhooks.DeleteRequest{
 		// Note: this is an inconsistency in the API naming...
-		Webhook: state.Key.Value,
+		Webhook: state.Key.ValueString(),
 	}
 	err := r.p.client.Webhooks.Delete(request)
 	if err != nil {
@@ -277,28 +271,25 @@ func findWebhook(response *webhooks.ListResponse, key, project_key, organization
 	var result Webhook
 	ok := false
 
-	// If project_key is an empty string, we need to explicitly set 'Null' to 'true' in the types.String struct.
+	// If project_key is an empty string, we need to explicitly set it to types.StringNull()
 	// Otherwise, it would be in an invalid state, which leads to potentially indeterminate behaviour.
-	// This is "fixed" in https://github.com/hashicorp/terraform-plugin-framework/pull/523 with explicit constructor
-	// functions that ensure a valid state.
-	// TODO: upgrade terraform provider framework dependency so we can use an explicit constructor
-	var projectKeyIsNull bool
+	var projectKeyVal types.String
 	if project_key == "" {
-		projectKeyIsNull = true
+		projectKeyVal = types.StringNull()
 	} else {
-		projectKeyIsNull = false
+		projectKeyVal = types.StringValue(project_key)
 	}
 
 	for _, webhook := range response.Webhooks {
 		if webhook.Key == key {
 			result = Webhook{
-				ID:           types.String{Value: webhook.Key},
-				Key:          types.String{Value: webhook.Key},
-				Organization: types.String{Value: organization},
-				Project:      types.String{Value: project_key, Null: projectKeyIsNull},
-				Name:         types.String{Value: webhook.Name},
-				Url:          types.String{Value: webhook.Url},
-				Secret:       types.String{Value: secret},
+				ID:           types.StringValue(webhook.Key),
+				Key:          types.StringValue(webhook.Key),
+				Organization: types.StringValue(organization),
+				Project:      projectKeyVal,
+				Name:         types.StringValue(webhook.Name),
+				Url:          types.StringValue(webhook.Url),
+				Secret:       types.StringValue(secret),
 			}
 			ok = true
 			break

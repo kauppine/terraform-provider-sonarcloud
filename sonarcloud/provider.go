@@ -6,10 +6,9 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -32,24 +31,22 @@ func (p *sonarcloudProvider) Metadata(_ context.Context, req provider.MetadataRe
 	resp.TypeName = "sonarcloud"
 }
 
-func (p *sonarcloudProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"organization": {
-				Type:     types.StringType,
+func (p sonarcloudProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"organization": schema.StringAttribute{
 				Optional: true,
 				Description: "The SonarCloud organization to manage the resources for. This value must be set in the" +
 					" `SONARCLOUD_ORGANIZATION` environment variable if left empty.",
 			},
-			"token": {
-				Type:      types.StringType,
+			"token": schema.StringAttribute{
 				Optional:  true,
 				Sensitive: true,
 				Description: "The token of a user with admin permissions in the organization. This value must be set in" +
 					" the `SONARCLOUD_TOKEN` environment variable if left empty.",
 			},
 		},
-	}, nil
+	}
 }
 
 func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -61,7 +58,7 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	var organization string
-	if config.Organization.Unknown {
+	if config.Organization.IsUnknown() {
 		resp.Diagnostics.AddWarning(
 			"Unable to create client",
 			"Cannot use unknown value as organization",
@@ -69,24 +66,24 @@ func (p *sonarcloudProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	if config.Organization.Null {
+	if config.Organization.IsNull() {
 		organization = os.Getenv("SONARCLOUD_ORGANIZATION")
 	} else {
-		organization = config.Organization.Value
+		organization = config.Organization.ValueString()
 	}
 
 	var token string
-	if config.Token.Unknown {
+	if config.Token.IsUnknown() {
 		resp.Diagnostics.AddWarning(
 			"Unable to create client",
 			"Cannot use unknown value as token",
 		)
 	}
 
-	if config.Token.Null {
+	if config.Token.IsNull() {
 		token = os.Getenv("SONARCLOUD_TOKEN")
 	} else {
-		token = config.Token.Value
+		token = config.Token.ValueString()
 	}
 
 	c := sonarcloud.NewClient(organization, token, nil)

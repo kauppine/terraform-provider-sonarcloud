@@ -6,9 +6,10 @@ import (
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,30 +43,28 @@ func (d *QualityGateSelectionResource) Configure(ctx context.Context, req resour
 	d.p = provider
 }
 
-func (r QualityGateSelectionResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r QualityGateSelectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource selects a quality gate for one or more projects",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Description: "The implicit ID of the resource",
 				Computed:    true,
 			},
-			"gate_id": {
-				Type:        types.StringType,
+			"gate_id": schema.StringAttribute{
 				Description: "The ID of the quality gate that is selected for the project(s).",
 				Required:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"project_keys": {
-				Type:        types.SetType{ElemType: types.StringType},
+			"project_keys": schema.SetAttribute{
+				ElementType: types.StringType,
 				Description: "The Keys of the projects which have been selected on the referenced quality gate",
 				Required:    true,
 			},
 		},
-	}, nil
+	}
 }
 
 func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -86,11 +85,11 @@ func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	for _, s := range plan.ProjectKeys.Elems {
+	for _, s := range plan.ProjectKeys.Elements() {
 		// Fill in api action struct for Quality Gates
 		request := qualitygates.SelectRequest{
-			GateId:       plan.GateId.Value,
-			ProjectKey:   s.(types.String).Value,
+			GateId:       plan.GateId.ValueString(),
+			ProjectKey:   s.(types.String).ValueString(),
 			Organization: r.p.organization,
 		}
 		err := r.p.client.Qualitygates.Select(request)
@@ -105,7 +104,7 @@ func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.C
 
 	// Query for selection
 	searchRequest := qualitygates.SearchRequest{
-		GateId:       plan.GateId.Value,
+		GateId:       plan.GateId.ValueString(),
 		Organization: r.p.organization,
 	}
 
@@ -118,15 +117,15 @@ func (r QualityGateSelectionResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	if result, ok := findSelection(res, plan.ProjectKeys.Elems); ok {
-		result.GateId = types.String{Value: plan.GateId.Value}
-		result.ID = types.String{Value: plan.GateId.Value}
+	if result, ok := findSelection(res, plan.ProjectKeys.Elements()); ok {
+		result.GateId = types.StringValue(plan.GateId.ValueString())
+		result.ID = types.StringValue(plan.GateId.ValueString())
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
 		resp.Diagnostics.AddError(
 			"Could not find Quality Gate Selection",
-			fmt.Sprintf("The findSelection function was unable to find the project keys: %+v in the response: %+v", plan.ProjectKeys.Elems, res),
+			fmt.Sprintf("The findSelection function was unable to find the project keys: %+v in the response: %+v", plan.ProjectKeys.Elements(), res),
 		)
 		return
 	}
@@ -141,7 +140,7 @@ func (r QualityGateSelectionResource) Read(ctx context.Context, req resource.Rea
 	}
 
 	searchRequest := qualitygates.SearchRequest{
-		GateId:       state.GateId.Value,
+		GateId:       state.GateId.ValueString(),
 		Organization: r.p.organization,
 	}
 	res, err := r.p.client.Qualitygates.Search(searchRequest)
@@ -152,9 +151,9 @@ func (r QualityGateSelectionResource) Read(ctx context.Context, req resource.Rea
 		)
 		return
 	}
-	if result, ok := findSelection(res, state.ProjectKeys.Elems); ok {
-		result.GateId = types.String{Value: state.GateId.Value}
-		result.ID = types.String{Value: state.GateId.Value}
+	if result, ok := findSelection(res, state.ProjectKeys.Elements()); ok {
+		result.GateId = types.StringValue(state.GateId.ValueString())
+		result.ID = types.StringValue(state.GateId.ValueString())
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -182,7 +181,7 @@ func (r QualityGateSelectionResource) Update(ctx context.Context, req resource.U
 	for _, s := range rem {
 		deselectRequest := qualitygates.DeselectRequest{
 			Organization: r.p.organization,
-			ProjectKey:   s.(types.String).Value,
+			ProjectKey:   s.(types.String).ValueString(),
 		}
 		err := r.p.client.Qualitygates.Deselect(deselectRequest)
 		if err != nil {
@@ -195,9 +194,9 @@ func (r QualityGateSelectionResource) Update(ctx context.Context, req resource.U
 	}
 	for _, s := range sel {
 		selectRequest := qualitygates.SelectRequest{
-			GateId:       state.GateId.Value,
+			GateId:       state.GateId.ValueString(),
 			Organization: r.p.organization,
-			ProjectKey:   s.(types.String).Value,
+			ProjectKey:   s.(types.String).ValueString(),
 		}
 		err := r.p.client.Qualitygates.Select(selectRequest)
 		if err != nil {
@@ -210,7 +209,7 @@ func (r QualityGateSelectionResource) Update(ctx context.Context, req resource.U
 	}
 
 	request := qualitygates.SearchRequest{
-		GateId:       plan.GateId.Value,
+		GateId:       plan.GateId.ValueString(),
 		Organization: r.p.organization,
 	}
 	res, err := r.p.client.Qualitygates.Search(request)
@@ -221,15 +220,15 @@ func (r QualityGateSelectionResource) Update(ctx context.Context, req resource.U
 		)
 		return
 	}
-	if result, ok := findSelection(res, plan.ProjectKeys.Elems); ok {
-		result.GateId = types.String{Value: state.GateId.Value}
-		result.ID = types.String{Value: state.GateId.Value}
+	if result, ok := findSelection(res, plan.ProjectKeys.Elements()); ok {
+		result.GateId = types.StringValue(state.GateId.ValueString())
+		result.ID = types.StringValue(state.GateId.ValueString())
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
 		resp.Diagnostics.AddError(
 			"Could not find Quality Gate Selection",
-			fmt.Sprintf("The findSelection function was unable to find the project keys: %+v in the response: %+v", plan.ProjectKeys.Elems, res),
+			fmt.Sprintf("The findSelection function was unable to find the project keys: %+v in the response: %+v", plan.ProjectKeys.Elements(), res),
 		)
 		return
 	}
@@ -243,10 +242,10 @@ func (r QualityGateSelectionResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	for _, s := range state.ProjectKeys.Elems {
+	for _, s := range state.ProjectKeys.Elements() {
 		request := qualitygates.DeselectRequest{
 			Organization: r.p.organization,
-			ProjectKey:   s.(types.String).Value,
+			ProjectKey:   s.(types.String).ValueString(),
 		}
 		err := r.p.client.Qualitygates.Deselect(request)
 		if err != nil {
@@ -262,16 +261,16 @@ func (r QualityGateSelectionResource) Delete(ctx context.Context, req resource.D
 }
 
 func diffSelection(state, plan Selection) (sel, rem []attr.Value) {
-	for _, old := range state.ProjectKeys.Elems {
+	for _, old := range state.ProjectKeys.Elements() {
 		// assume that old is a string
-		if !containSelection(plan.ProjectKeys.Elems, old.(types.String).Value) {
-			rem = append(rem, types.String{Value: old.(types.String).Value})
+		if !containSelection(plan.ProjectKeys.Elements(), old.(types.String).ValueString()) {
+			rem = append(rem, types.StringValue(old.(types.String).ValueString()))
 		}
 	}
-	for _, new := range plan.ProjectKeys.Elems {
+	for _, new := range plan.ProjectKeys.Elements() {
 		// assume that new is a string
-		if !containSelection(state.ProjectKeys.Elems, new.(types.String).Value) {
-			sel = append(sel, types.String{Value: new.(types.String).Value})
+		if !containSelection(state.ProjectKeys.Elements(), new.(types.String).ValueString()) {
+			sel = append(sel, types.StringValue(new.(types.String).ValueString()))
 		}
 	}
 
@@ -281,7 +280,7 @@ func diffSelection(state, plan Selection) (sel, rem []attr.Value) {
 // Check if a condition is contained in a condition list
 func containSelection(list []attr.Value, item string) bool {
 	for _, c := range list {
-		if c.Equal(types.String{Value: item}) {
+		if c.Equal(types.StringValue(item)) {
 			return true
 		}
 	}

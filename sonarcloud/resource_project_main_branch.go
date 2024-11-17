@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,39 +47,36 @@ func (d *ProjectMainBranchResource) Configure(ctx context.Context, req resource.
 	d.p = provider
 }
 
-func (r ProjectMainBranchResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r ProjectMainBranchResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `This resource manages a project main branch.
 
 Note that certain operations, such as the deletion of a project's main branch configuration, may
 not be permitted by the SonarCloud web API, or may require admin permissions.
 		`,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the project main branch.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 255),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 255),
 				},
 			},
-			"project_key": {
-				Type:        types.StringType,
+			"project_key": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the project.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 400),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 400),
 				},
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -98,8 +98,8 @@ func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	request := project_branches.RenameRequest{
-		Project: plan.ProjectKey.Value,
-		Name:    plan.Name.Value,
+		Project: plan.ProjectKey.ValueString(),
+		Name:    plan.Name.ValueString(),
 	}
 
 	err := r.p.client.ProjectBranches.Rename(request)
@@ -112,9 +112,9 @@ func (r ProjectMainBranchResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	var result = ProjectMainBranch{
-		ID:         types.String{Value: plan.Name.Value},
-		Name:       types.String{Value: plan.Name.Value},
-		ProjectKey: types.String{Value: plan.ProjectKey.Value},
+		ID:         types.StringValue(plan.Name.ValueString()),
+		Name:       types.StringValue(plan.Name.ValueString()),
+		ProjectKey: types.StringValue(plan.ProjectKey.ValueString()),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -132,7 +132,7 @@ func (r ProjectMainBranchResource) Read(ctx context.Context, req resource.ReadRe
 
 	// Fill in api action struct
 	request := project_branches.ListRequest{
-		Project: state.ProjectKey.Value,
+		Project: state.ProjectKey.ValueString(),
 	}
 
 	response, err := r.p.client.ProjectBranches.List(request)
@@ -145,7 +145,7 @@ func (r ProjectMainBranchResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	// Check if the main branch matches the declared main branch
-	if result, ok := findProjectMainBranch(response, state.Name.Value, state.ProjectKey.Value); ok {
+	if result, ok := findProjectMainBranch(response, state.Name.ValueString(), state.ProjectKey.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -182,8 +182,8 @@ func (r ProjectMainBranchResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	request := project_branches.RenameRequest{
-		Project: plan.ProjectKey.Value,
-		Name:    plan.Name.Value,
+		Project: plan.ProjectKey.ValueString(),
+		Name:    plan.Name.ValueString(),
 	}
 
 	err := r.p.client.ProjectBranches.Rename(request)
@@ -200,9 +200,9 @@ func (r ProjectMainBranchResource) Update(ctx context.Context, req resource.Upda
 	// (The rename-response does not have a return value.)
 	// As the API seems to be eventually consistent, this results in flaky behaviour, so we just keep it simple for now.
 	var result = ProjectMainBranch{
-		ID:         types.String{Value: plan.Name.Value},
-		Name:       types.String{Value: plan.Name.Value},
-		ProjectKey: types.String{Value: plan.ProjectKey.Value},
+		ID:         types.StringValue(plan.Name.ValueString()),
+		Name:       types.StringValue(plan.Name.ValueString()),
+		ProjectKey: types.StringValue(plan.ProjectKey.ValueString()),
 	}
 	diags = resp.State.Set(ctx, result)
 

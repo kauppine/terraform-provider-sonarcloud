@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,32 +45,29 @@ func (d *UserGroupMemberResource) Configure(ctx context.Context, req resource.Co
 	d.p = provider
 }
 
-func (r UserGroupMemberResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r UserGroupMemberResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages a single member of a user group.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"group": {
-				Type:        types.StringType,
+			"group": schema.StringAttribute{
 				Optional:    true,
 				Description: "The name of the group to which the user should be added.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"login": {
-				Type:        types.StringType,
+			"login": schema.StringAttribute{
 				Required:    true,
 				Description: "The login of the user that should be added to the group.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r UserGroupMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -92,8 +90,8 @@ func (r UserGroupMemberResource) Create(ctx context.Context, req resource.Create
 
 	// Fill in api action struct
 	request := user_groups.AddUserRequest{
-		Login:        plan.Login.Value,
-		Name:         plan.Group.Value,
+		Login:        plan.Login.ValueString(),
+		Name:         plan.Group.ValueString(),
 		Organization: r.p.organization,
 	}
 
@@ -108,7 +106,7 @@ func (r UserGroupMemberResource) Create(ctx context.Context, req resource.Create
 
 	// We have no response, assume the values were set when no error has been returned and just set ID
 	state := plan
-	state.ID = types.String{Value: fmt.Sprintf("%s%s", plan.Group.Value, plan.Login.Value)}
+	state.ID = types.StringValue(fmt.Sprintf("%s%s", plan.Group.ValueString(), plan.Login.ValueString()))
 	diags = resp.State.Set(ctx, state)
 
 	resp.Diagnostics.Append(diags...)
@@ -125,8 +123,8 @@ func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequ
 
 	// Fill in api action struct
 	request := user_groups.UsersRequest{
-		Q:    state.Login.Value,
-		Name: state.Group.Value,
+		Q:    state.Login.ValueString(),
+		Name: state.Group.ValueString(),
 	}
 
 	response, err := r.p.client.UserGroups.UsersAll(request)
@@ -139,7 +137,8 @@ func (r UserGroupMemberResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findGroupMember(response, state.Group.Value, state.Login.Value); ok {
+	if result, ok := findGroupMember(response, state.Group.ValueString(), state.Login.ValueString()); ok {
+		result.ID = state.Group
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -162,8 +161,8 @@ func (r UserGroupMemberResource) Delete(ctx context.Context, req resource.Delete
 
 	// Fill in api action struct
 	request := user_groups.RemoveUserRequest{
-		Login:        state.Login.Value,
-		Name:         state.Group.Value,
+		Login:        state.Login.ValueString(),
+		Name:         state.Group.ValueString(),
 		Organization: r.p.organization,
 	}
 

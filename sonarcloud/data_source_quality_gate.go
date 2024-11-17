@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,70 +42,63 @@ func (d *QualityGateDataSource) Configure(ctx context.Context, req datasource.Co
 	d.p = provider
 }
 
-func (d QualityGateDataSource) GetSchema(__ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d QualityGateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This Data Source retrieves a single Quality Gate for the configured Organization.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Description: "Id for Terraform backend",
 				Computed:    true,
 			},
-			"gate_id": {
-				Type:        types.Float64Type,
+			"gate_id": schema.Float64Attribute{
 				Description: "Id created by SonarCloud",
 				Computed:    true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Description: "Name of the Quality Gate",
 				Required:    true,
 			},
-			"is_default": {
-				Type:        types.BoolType,
+			"is_default": schema.BoolAttribute{
 				Description: "Is this the default Quality gate for this project?",
 				Computed:    true,
 			},
-			"is_built_in": {
-				Type:        types.BoolType,
+			"is_built_in": schema.BoolAttribute{
 				Description: "Is this Quality gate built in?",
 				Computed:    true,
 			},
-			"conditions": {
+			"conditions": schema.SetNestedAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The conditions of this quality gate.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"id": {
-						Type:        types.Float64Type,
-						Description: "ID of the Condition.",
-						Computed:    true,
-					},
-					"metric": {
-						Type:        types.StringType,
-						Description: "The metric on which the condition is based. Must be one of: https://docs.sonarqube.org/latest/user-guide/metric-definitions/",
-						Computed:    true,
-						Validators: []tfsdk.AttributeValidator{
-							allowedOptions("security_rating", "ncloc_language_distribution", "test_execution_time", "statements", "lines_to_cover", "quality_gate_details", "new_reliabillity_remediation_effort", "tests", "security_review_rating", "new_xxx_violations", "conditions_by_line", "new_violations", "ncloc", "duplicated_lines", "test_failures", "test_errors", "reopened_issues", "new_vulnerabilities", "duplicated_lines_density", "test_success_density", "sqale_debt_ratio", "security_hotspots_reviewed", "security_remediation_effort", "covered_conditions_by_line", "classes", "sqale_rating", "xxx_violations", "true_positive_issues", "violations", "new_security_review_rating", "new_security_remediation_effort", "vulnerabillities", "new_uncovered_conditions", "files", "branch_coverage_hits_data", "uncovered_lines", "comment_lines_density", "new_uncovered_lines", "complexty", "cognitive_complexity", "uncovered_conditions", "functions", "new_technical_debt", "new_coverage", "coverage", "new_branch_coverage", "confirmed_issues", "reliabillity_remediation_effort", "projects", "coverage_line_hits_data", "code_smells", "directories", "lines", "bugs", "line_coverage", "new_line_coverage", "reliability_rating", "duplicated_blocks", "branch_coverage", "new_code_smells", "new_sqale_debt_ratio", "open_issues", "sqale_index", "new_lines_to_cover", "comment_lines", "skipped_tests"),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.Float64Attribute{
+							Description: "ID of the Condition.",
+							Computed:    true,
+						},
+						"metric": schema.StringAttribute{
+							Description: "The metric on which the condition is based. Must be one of: https://docs.sonarqube.org/latest/user-guide/metric-definitions/",
+							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("security_rating", "ncloc_language_distribution", "test_execution_time", "statements", "lines_to_cover", "quality_gate_details", "new_reliabillity_remediation_effort", "tests", "security_review_rating", "new_xxx_violations", "conditions_by_line", "new_violations", "ncloc", "duplicated_lines", "test_failures", "test_errors", "reopened_issues", "new_vulnerabilities", "duplicated_lines_density", "test_success_density", "sqale_debt_ratio", "security_hotspots_reviewed", "security_remediation_effort", "covered_conditions_by_line", "classes", "sqale_rating", "xxx_violations", "true_positive_issues", "violations", "new_security_review_rating", "new_security_remediation_effort", "vulnerabillities", "new_uncovered_conditions", "files", "branch_coverage_hits_data", "uncovered_lines", "comment_lines_density", "new_uncovered_lines", "complexty", "cognitive_complexity", "uncovered_conditions", "functions", "new_technical_debt", "new_coverage", "coverage", "new_branch_coverage", "confirmed_issues", "reliabillity_remediation_effort", "projects", "coverage_line_hits_data", "code_smells", "directories", "lines", "bugs", "line_coverage", "new_line_coverage", "reliability_rating", "duplicated_blocks", "branch_coverage", "new_code_smells", "new_sqale_debt_ratio", "open_issues", "sqale_index", "new_lines_to_cover", "comment_lines", "skipped_tests"),
+							},
+						},
+						"op": schema.StringAttribute{
+							Description: "Operation on which the metric is evaluated must be either: LT, GT",
+							Optional:    true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("LT", "GT"),
+							},
+						},
+						"error": schema.StringAttribute{
+							Description: "The value on which the condition errors.",
+							Computed:    true,
 						},
 					},
-					"op": {
-						Type:        types.StringType,
-						Description: "Operation on which the metric is evaluated must be either: LT, GT",
-						Optional:    true,
-						Validators: []tfsdk.AttributeValidator{
-							allowedOptions("LT", "GT"),
-						},
-					},
-					"error": {
-						Type:        types.StringType,
-						Description: "The value on which the condition errors.",
-						Computed:    true,
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (d QualityGateDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -127,20 +121,20 @@ func (d QualityGateDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	result := QualityGate{}
 	for _, qualityGate := range response.Qualitygates {
-		if qualityGate.Name == config.Name.Value {
+		if qualityGate.Name == config.Name.ValueString() {
 			for _, condition := range qualityGate.Conditions {
 				result.Conditions = append(result.Conditions, Condition{
-					Error:  types.String{Value: condition.Error},
-					ID:     types.Float64{Value: condition.Id},
-					Metric: types.String{Value: condition.Metric},
-					Op:     types.String{Value: condition.Op},
+					Error:  types.StringValue(condition.Error),
+					ID:     types.Float64Value(condition.Id),
+					Metric: types.StringValue(condition.Metric),
+					Op:     types.StringValue(condition.Op),
 				})
 			}
-			result.ID = types.String{Value: fmt.Sprintf("%d", int(qualityGate.Id))}
-			result.GateId = types.Float64{Value: qualityGate.Id}
-			result.Name = types.String{Value: qualityGate.Name}
-			result.IsDefault = types.Bool{Value: qualityGate.IsDefault}
-			result.IsBuiltIn = types.Bool{Value: qualityGate.IsBuiltIn}
+			result.ID = types.StringValue(fmt.Sprintf("%d", int(qualityGate.Id)))
+			result.GateId = types.Float64Value(qualityGate.Id)
+			result.Name = types.StringValue(qualityGate.Name)
+			result.IsDefault = types.BoolValue(qualityGate.IsDefault)
+			result.IsBuiltIn = types.BoolValue(qualityGate.IsBuiltIn)
 
 		}
 	}

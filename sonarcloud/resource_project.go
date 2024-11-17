@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -43,46 +46,43 @@ func (d *ProjectResource) Configure(ctx context.Context, req resource.ConfigureR
 	d.p = provider
 }
 
-func (r ProjectResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource manages a project.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the project. **Warning:** forces project recreation when changed.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 255),
+				Validators: []validator.String{
+
+					stringvalidator.LengthBetween(1, 255),
 				},
 			},
-			"key": {
-				Type:        types.StringType,
+			"key": schema.StringAttribute{
 				Required:    true,
 				Description: "The key of the project. **Warning**: must be globally unique.",
-				Validators: []tfsdk.AttributeValidator{
-					stringLengthBetween(1, 400),
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 400),
 				},
 			},
-			"visibility": {
-				Type:     types.StringType,
+			"visibility": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
 				Description: "The visibility of the project. Use `private` to only share it with your organization." +
 					" Use `public` if the project should be visible to everyone. Defaults to the organization's default visibility." +
 					" **Note:** private projects are only available when you have a SonarCloud subscription.",
-				Validators: []tfsdk.AttributeValidator{
-					allowedOptions("public", "private"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("public", "private"),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r ProjectResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -105,10 +105,10 @@ func (r ProjectResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Fill in api action struct
 	request := projects.CreateRequest{
-		Name:         plan.Name.Value,
+		Name:         plan.Name.ValueString(),
 		Organization: r.p.organization,
-		Project:      plan.Key.Value,
-		Visibility:   plan.Visibility.Value,
+		Project:      plan.Key.ValueString(),
+		Visibility:   plan.Visibility.ValueString(),
 	}
 
 	res, err := r.p.client.Projects.Create(request)
@@ -121,10 +121,10 @@ func (r ProjectResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	var result = Project{
-		ID:         types.String{Value: res.Project.Key},
-		Name:       types.String{Value: res.Project.Name},
-		Key:        types.String{Value: res.Project.Key},
-		Visibility: types.String{Value: plan.Visibility.Value},
+		ID:         types.StringValue(res.Project.Key),
+		Name:       types.StringValue(res.Project.Name),
+		Key:        types.StringValue(res.Project.Key),
+		Visibility: types.StringValue(plan.Visibility.ValueString()),
 	}
 	diags = resp.State.Set(ctx, result)
 
@@ -142,7 +142,7 @@ func (r ProjectResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	// Fill in api action struct
 	request := projects.SearchRequest{
-		Projects: state.Key.Value,
+		Projects: state.Key.ValueString(),
 	}
 
 	response, err := r.p.client.Projects.SearchAll(request)
@@ -155,7 +155,7 @@ func (r ProjectResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findProject(response, state.Key.Value); ok {
+	if result, ok := findProject(response, state.Key.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	} else {
@@ -187,8 +187,8 @@ func (r ProjectResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	if _, ok := changed["key"]; ok {
 		request := projects.UpdateKeyRequest{
-			From: state.Key.Value,
-			To:   plan.Key.Value,
+			From: state.Key.ValueString(),
+			To:   plan.Key.ValueString(),
 		}
 
 		err := r.p.client.Projects.UpdateKey(request)
@@ -203,8 +203,8 @@ func (r ProjectResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	if _, ok := changed["visibility"]; ok {
 		request := projects.UpdateVisibilityRequest{
-			Project:    plan.Key.Value,
-			Visibility: plan.Visibility.Value,
+			Project:    plan.Key.ValueString(),
+			Visibility: plan.Visibility.ValueString(),
 		}
 
 		err := r.p.client.Projects.UpdateVisibility(request)
@@ -231,7 +231,7 @@ func (r ProjectResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Check if the resource exists the list of retrieved resources
-	if result, ok := findProject(response, plan.Key.Value); ok {
+	if result, ok := findProject(response, plan.Key.ValueString()); ok {
 		diags = resp.State.Set(ctx, result)
 		resp.Diagnostics.Append(diags...)
 	}
@@ -247,7 +247,7 @@ func (r ProjectResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	request := projects.DeleteRequest{
-		Project: state.Key.Value,
+		Project: state.Key.ValueString(),
 	}
 
 	err := r.p.client.Projects.Delete(request)
