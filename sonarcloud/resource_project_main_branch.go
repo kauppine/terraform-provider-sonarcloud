@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/project_branches"
 )
 
 type ProjectMainBranchResource struct {

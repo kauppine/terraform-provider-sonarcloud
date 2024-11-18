@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/webhooks"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/webhooks"
 )
 
 type WebhooksDataSource struct {

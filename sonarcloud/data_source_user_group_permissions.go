@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kauppine/go-sonarcloud/sonarcloud"
 )
 
 type UserGroupPermissionsDataSource struct {

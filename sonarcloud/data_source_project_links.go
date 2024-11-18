@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	pl "github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_links"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	pl "github.com/kauppine/go-sonarcloud/sonarcloud/project_links"
 )
 
 type ProjectLinksDataSource struct {
