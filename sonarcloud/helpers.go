@@ -8,16 +8,16 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/project_branches"
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/projects"
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/qualitygates"
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_tokens"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/project_branches"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/projects"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/qualitygates"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/user_groups"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/user_tokens"
 )
 
 // changedAttrs returns a map where the keys are the names of all the attributes that were changed

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/user_groups"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/user_groups"
 )
 
 type UserGroupDataSource struct {

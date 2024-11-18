@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud"
-	"github.com/ArgonGlow/go-sonarcloud/sonarcloud/permissions"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,6 +18,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kauppine/go-sonarcloud/sonarcloud"
+	"github.com/kauppine/go-sonarcloud/sonarcloud/permissions"
 )
 
 type UserPermissionsResource struct {
