@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.17.0
 	github.com/hashicorp/terraform-plugin-go v0.26.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1
-	github.com/kauppine/go-sonarcloud v0.8.2
+	github.com/kauppine/go-sonarcloud v0.8.4
 )
 
 require (
